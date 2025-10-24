@@ -27,9 +27,9 @@ import com.example.myhipmi.ui.components.MyHipmiTopBar
 import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
 import com.example.myhipmi.ui.theme.BluePrimary
 import com.example.myhipmi.ui.theme.CardGreen
+import com.example.myhipmi.ui.theme.GreenMain
 import com.example.myhipmi.ui.theme.GreenPrimary
 import com.example.myhipmi.ui.theme.RedPrimary
-import com.example.myhipmi.ui.theme.SecondaryGreen
 import com.example.myhipmi.ui.theme.TextPrimary
 import com.example.myhipmi.ui.theme.TextSecondary
 import com.example.myhipmi.ui.theme.White
@@ -39,7 +39,7 @@ fun EventScreen(navController: NavHostController) {
     Scaffold(
         topBar = {
             MyHipmiTopBar(
-                title = "Event HIPMI",
+                title = "Event",
                 onBackClick = { navController.popBackStack() }
             )
         },
@@ -61,7 +61,7 @@ fun EventScreen(navController: NavHostController) {
         ) {
             // Tombol Broadcast
             Button(
-                onClick = { /* Aksi Broadcast */ },
+                onClick = { navController.navigate("add_event") },
                 colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
@@ -100,7 +100,7 @@ fun EventCard(
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SecondaryGreen),
+        colors = CardDefaults.cardColors(containerColor = GreenMain),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -170,7 +170,7 @@ fun EventCard(
 
             // Tombol Detail
             Button(
-                onClick = { /* Lihat detail event */ },
+                onClick = {  },
                 colors = ButtonDefaults.buttonColors(containerColor = CardGreen),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.fillMaxWidth()

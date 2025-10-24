@@ -7,7 +7,7 @@ val GreenLight = Color(0xFFA5D6A7)
 val GreenMedium = Color(0xFF81C784)
 val GreenDark = Color(0xFF2E7D32)
 val GreenPrimary = Color(0xFF4CAF50)
-
+val GreenMain = Color(0xFFF7FAF4)
 val RedPrimary = Color(0xFFF44336)
 val BluePrimary = Color(0xFF1B3FAF)
 val YellowPrimary = Color(0xFFFFEB3B)

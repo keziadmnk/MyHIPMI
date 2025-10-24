@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.myhipmi.ui.screen.event.AddEventScreen
 import com.example.myhipmi.ui.screen.landing.LandingPage
 import com.example.myhipmi.ui.screen.login.LoginPage
 import com.example.myhipmi.ui.screen.home.HomeScreen
@@ -66,5 +67,6 @@ fun MyHipmiApp() {
         composable("rapat") { RapatScreen(navController) }
         composable("piket") { PiketScreen(navController) }
         composable("event") { EventScreen(navController) }
+        composable ("add_event") { AddEventScreen(navController)}
     }
 }
