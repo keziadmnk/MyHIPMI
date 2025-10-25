@@ -2,7 +2,6 @@ package com.example.myhipmi.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Palet utama MyHIPMI
 val GreenLight = Color(0xFFA5D6A7)
 val GreenMedium = Color(0xFF81C784)
 val GreenDark = Color(0xFF2E7D32)

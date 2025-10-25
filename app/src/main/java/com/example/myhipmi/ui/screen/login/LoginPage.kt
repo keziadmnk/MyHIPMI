@@ -19,8 +19,8 @@ import com.example.myhipmi.ui.theme.*
 
 @Composable
 fun LoginPage(
-    onLoginSuccess: () -> Unit,   // ✅ dipanggil saat tombol “Masuk” ditekan
-    onBack: () -> Unit            // ✅ bisa dipakai untuk tombol kembali (opsional)
+    onLoginSuccess: () -> Unit,
+    onBack: () -> Unit
 ) {
     // 🟢 State untuk input email & password
     var email by remember { mutableStateOf("") }
