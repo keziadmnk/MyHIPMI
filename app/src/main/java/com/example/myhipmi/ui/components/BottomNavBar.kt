@@ -20,14 +20,13 @@ import com.example.myhipmi.ui.theme.PrimaryGreen
 
 @Composable
 fun BottomNavBar(
+    selectedIndex: Int = 0,
     onHome: () -> Unit,
     onKas: () -> Unit,
     onRapat: () -> Unit,
     onPiket: () -> Unit,
     onEvent: () -> Unit
 ) {
-    var selectedIndex by remember { mutableStateOf(0) }
-
     val items = listOf(
         Triple("Home", Icons.Default.Home, onHome),
         Triple("Kas", Icons.Default.Payments, onKas),
@@ -37,14 +36,15 @@ fun BottomNavBar(
     )
 
     Surface(
-        color = Color(0xFFDDECCF), // hijau muda seperti di gambar
-        shadowElevation = 8.dp,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        color = Color(0xFFDDECCF),
+        shadowElevation = 16.dp,
+        tonalElevation = 8.dp,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 6.dp),
+                .padding(vertical = 16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -53,9 +53,8 @@ fun BottomNavBar(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .weight(1f)
-                        .padding(vertical = 4.dp)
+                        .padding(vertical = 8.dp)
                         .clickable {
-                            selectedIndex = index
                             item.third.invoke()
                         }
                 ) {
@@ -63,13 +62,13 @@ fun BottomNavBar(
                         imageVector = item.second,
                         contentDescription = item.first,
                         tint = if (selectedIndex == index) PrimaryGreen else Color.Gray,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(28.dp)
                     )
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height(4.dp))
                     Text(
                         text = item.first,
                         color = if (selectedIndex == index) PrimaryGreen else Color.Gray,
-                        fontSize = 12.sp
+                        fontSize = 13.sp
                     )
                 }
             }

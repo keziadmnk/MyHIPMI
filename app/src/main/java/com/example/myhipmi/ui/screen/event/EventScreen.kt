@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -51,7 +52,17 @@ fun EventScreen(navController: NavHostController) {
                 onPiket = { navController.navigate("piket") },
                 onEvent = { /* already here */ }
             )
-        }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { navController.navigate("add_event") },
+                containerColor = GreenPrimary,
+                contentColor = Color.White
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Tambah Event")
+            }
+        },
+        floatingActionButtonPosition = FabPosition.End
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -59,17 +70,6 @@ fun EventScreen(navController: NavHostController) {
                 .background(White)
                 .padding(innerPadding)
         ) {
-            // Tombol Broadcast
-            Button(
-                onClick = { navController.navigate("add_event") },
-                colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                Text(text = "+ Broadcast", color = White)
-            }
 
             // Daftar Event
             LazyColumn(
