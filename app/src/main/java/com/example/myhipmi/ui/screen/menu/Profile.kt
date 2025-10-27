@@ -205,6 +205,10 @@ fun ProfileScreen(navController: NavController) {
             onDismiss = { isMenuVisible = false },
             userName = nama,
             userRole = jabatan,
+            onProfileClick = {
+                isMenuVisible = false
+                navController.navigate("profile")
+            }
         )
     }
 }

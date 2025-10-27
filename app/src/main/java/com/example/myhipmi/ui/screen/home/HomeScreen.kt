@@ -232,8 +232,11 @@ fun HomeScreen(
         onDismiss = { isMenuVisible = false },
         userName = "Nagita Slavina",
         userRole = "Sekretaris Umum",
-        onProfileClick = onNavigateToProfile,
-        onAboutClick = onNavigateToAbout,
+        onProfileClick = {
+            onNavigateToProfile()
+            isMenuVisible = false
+        },
+        onAboutClick = { onNavigateToAbout() },
         onLogoutClick = onLogout
     )
 }
