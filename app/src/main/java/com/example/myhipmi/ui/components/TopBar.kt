@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.myhipmi.ui.theme.DarkGreen
 import com.example.myhipmi.ui.theme.GreenPrimary
 import com.example.myhipmi.ui.theme.TextPrimary
 
@@ -55,7 +56,7 @@ fun MyHipmiTopBar(
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = GreenPrimary
+                            tint = DarkGreen
                         )
                     }
                 }
@@ -65,14 +66,14 @@ fun MyHipmiTopBar(
                     Icon(
                         imageVector = Icons.Default.Notifications,
                         contentDescription = "Notifications",
-                        tint = GreenPrimary
+                        tint = DarkGreen
                     )
                 }
                 IconButton(onClick = onMenuClick) {
                     Icon(
                         imageVector = Icons.Default.Menu,
                         contentDescription = "Menu",
-                        tint = GreenPrimary
+                        tint = DarkGreen
                     )
                 }
             },

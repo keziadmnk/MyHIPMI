@@ -2,18 +2,14 @@ package com.example.myhipmi.ui.screen.event
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,21 +22,14 @@ import androidx.navigation.NavHostController
 import com.example.myhipmi.R
 import com.example.myhipmi.ui.components.MyHipmiTopBar
 import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
-import com.example.myhipmi.ui.theme.BluePrimary
-import com.example.myhipmi.ui.theme.CardGreen
-import com.example.myhipmi.ui.theme.GreenMain
-import com.example.myhipmi.ui.theme.GreenPrimary
-import com.example.myhipmi.ui.theme.RedPrimary
-import com.example.myhipmi.ui.theme.TextPrimary
-import com.example.myhipmi.ui.theme.TextSecondary
-import com.example.myhipmi.ui.theme.White
+import com.example.myhipmi.ui.theme.*
 
 @Composable
 fun EventScreen(navController: NavHostController) {
     Scaffold(
         topBar = {
             MyHipmiTopBar(
-                title = "Event",
+                title = "Event HIPMI",
                 onBackClick = { navController.popBackStack() }
             )
         },
@@ -50,7 +39,7 @@ fun EventScreen(navController: NavHostController) {
                 onKas = { navController.navigate("kas") },
                 onRapat = { navController.navigate("rapat") },
                 onPiket = { navController.navigate("piket") },
-                onEvent = { /* already here */ }
+                onEvent = { /* sudah di sini */ }
             )
         },
         floatingActionButton = {
@@ -70,8 +59,6 @@ fun EventScreen(navController: NavHostController) {
                 .background(White)
                 .padding(innerPadding)
         ) {
-
-            // Daftar Event
             LazyColumn(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -81,7 +68,7 @@ fun EventScreen(navController: NavHostController) {
                         title = "Seminar Kewirausahaan Nasional",
                         date = "15 Oktober 2025",
                         time = "14:00 WIB",
-                        location = "Aula PKM UNAND",
+                        location = "Seminar PKM",
                         description = "Seminar nasional tentang bisnis digital dan strategi kewirausahaan modern."
                     )
                 }
@@ -98,14 +85,16 @@ fun EventCard(
     location: String,
     description: String
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = GreenMain),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6E4)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header
+            // Judul & Tombol Menu
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -117,26 +106,58 @@ fun EventCard(
                     fontSize = 16.sp,
                     color = TextPrimary
                 )
-                Row {
+
+                // Tombol titik tiga
+                Box {
                     Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit",
-                        tint = BluePrimary,
-                        modifier = Modifier.size(18.dp)
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Menu",
+                        tint = TextPrimary,
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clickable { showMenu = !showMenu }
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete",
-                        tint = RedPrimary,
-                        modifier = Modifier.size(18.dp)
-                    )
+
+                    // Popup Menu
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        modifier = Modifier.background(Color.White)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Detail") },
+                            onClick = {
+                                showMenu = false
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Info, contentDescription = null, tint = GreenPrimary)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Edit") },
+                            onClick = {
+                                showMenu = false
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Edit, contentDescription = null, tint = BluePrimary)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Hapus", color = RedPrimary) },
+                            onClick = {
+                                showMenu = false
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Delete, contentDescription = null, tint = RedPrimary)
+                            }
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Konten Event
+            // Gambar & Detail
             Row(modifier = Modifier.fillMaxWidth()) {
                 Box(
                     modifier = Modifier
@@ -164,18 +185,6 @@ fun EventCard(
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Tombol Detail
-            Button(
-                onClick = {  },
-                colors = ButtonDefaults.buttonColors(containerColor = CardGreen),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "Lihat Detail Event", color = TextPrimary)
             }
         }
     }

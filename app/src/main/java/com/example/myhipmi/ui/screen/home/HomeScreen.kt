@@ -1,6 +1,7 @@
 package com.example.myhipmi.ui.screen.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -10,9 +11,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -20,6 +24,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myhipmi.ui.components.BottomNavBar
+import com.example.myhipmi.ui.components.MenuDrawer
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 
 
 @Composable
@@ -27,8 +35,12 @@ fun HomeScreen(
     onNavigateToKas: () -> Unit = {},
     onNavigateToRapat: () -> Unit = {},
     onNavigateToPiket: () -> Unit = {},
-    onNavigateToEvent: () -> Unit = {}
+    onNavigateToEvent: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToAbout: () -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
+    var isMenuVisible by remember { mutableStateOf(false) }
     val gradientBrush = Brush.verticalGradient(
         colors = listOf(
             Color(0xFFE3ECDA),
@@ -101,7 +113,9 @@ fun HomeScreen(
                         Icons.Default.Menu,
                         contentDescription = "menu",
                         tint = Color(0xFF4A5D23),
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clickable { isMenuVisible = true }
                     )
                 }
             }
@@ -213,6 +227,15 @@ fun HomeScreen(
             )
         }
     }
+    MenuDrawer(
+        isVisible = isMenuVisible,
+        onDismiss = { isMenuVisible = false },
+        userName = "Nagita Slavina",
+        userRole = "Sekretaris Umum",
+        onProfileClick = onNavigateToProfile,
+        onAboutClick = onNavigateToAbout,
+        onLogoutClick = onLogout
+    )
 }
 
 @Composable
@@ -227,6 +250,11 @@ fun SummaryCard(
 ) {
     Column(
         modifier = modifier
+            .shadow(
+                elevation = 2.dp,
+                shape = RoundedCornerShape(20.dp),
+                clip = false
+            )
             .clip(RoundedCornerShape(20.dp))
             .background(bgColor)
             .padding(20.dp)
@@ -277,6 +305,11 @@ fun ActivityItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(16.dp),
+                clip = false
+            )
             .clip(RoundedCornerShape(16.dp))
             .background(bgColor)
             .padding(16.dp),
