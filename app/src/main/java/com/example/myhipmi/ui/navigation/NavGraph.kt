@@ -7,10 +7,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.example.myhipmi.ui.screen.kas.KasScreen
 import com.example.myhipmi.ui.screen.event.AddEventScreen
 import com.example.myhipmi.ui.screen.event.EventScreen
 import com.example.myhipmi.ui.screen.home.HomeScreen
-import com.example.myhipmi.ui.screen.kas.KasScreen
 import com.example.myhipmi.ui.screen.landing.LandingPage
 import com.example.myhipmi.ui.screen.login.LoginPage
 import com.example.myhipmi.ui.screen.menu.AboutScreen
@@ -56,7 +56,16 @@ fun NavGraph(navController: NavHostController) {
         }
 
         // === Menu utama ===
-        composable("kas") { KasScreen(navController) }
+        composable("kas") {
+            KasScreen(
+                navController = navController,
+                onHome = { navController.navigate("home") },
+                onKas = { navController.navigate("kas") },
+                onRapat = { navController.navigate("rapat") },
+                onPiket = { navController.navigate("piket") },
+                onEvent = { navController.navigate("event") }
+            )
+        }
         composable("rapat") { RapatScreen(navController) }
         composable("piket") { PiketScreen(navController) }
         composable("event") { EventScreen(navController) }
