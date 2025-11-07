@@ -30,6 +30,7 @@ fun MyHipmiTopBar(
     val gradientBrush = Brush.verticalGradient(
         colors = listOf(
             Color(0xFFE3ECDA),
+            Color(0xFFE3ECDA),
             Color(0xFFF0F6F0),
             Color(0xFFFFFFFF)
         )

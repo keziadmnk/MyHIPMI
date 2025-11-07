@@ -14,8 +14,8 @@ import com.example.myhipmi.ui.screen.home.HomeScreen
 import com.example.myhipmi.ui.screen.landing.LandingPage
 import com.example.myhipmi.ui.screen.login.LoginPage
 import com.example.myhipmi.ui.screen.menu.AboutScreen
+import com.example.myhipmi.ui.screen.menu.ProfileScreen
 import com.example.myhipmi.ui.screen.piket.PiketScreen
-import com.example.myhipmi.ui.screen.profile.ProfileScreen
 import com.example.myhipmi.ui.screen.rapat.AddRapatScreen
 import com.example.myhipmi.ui.screen.rapat.RapatDetailScreen
 import com.example.myhipmi.ui.screen.rapat.RapatScreen

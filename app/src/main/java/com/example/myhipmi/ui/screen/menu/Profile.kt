@@ -1,4 +1,4 @@
-package com.example.myhipmi.ui.screen.profile
+package com.example.myhipmi.ui.screen.menu
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -33,15 +33,6 @@ fun ProfileScreen(navController: NavController) {
     var nomorHP by remember { mutableStateOf("") }
     var alamat by remember { mutableStateOf("") }
 
-    val gradientBrush = Brush.verticalGradient(
-        colors = listOf(
-            Color(0xFFE3ECDA),
-            Color(0xFFF0F6F0),
-            Color(0xFFFFFFFF),
-            Color(0xFFFFFFFF)
-        )
-    )
-
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
@@ -56,7 +47,7 @@ fun ProfileScreen(navController: NavController) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(brush = gradientBrush)
+                    .background(Color(0xFFF8FAF9))
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
                     .padding(20.dp),

@@ -97,39 +97,6 @@ fun LandingPage(
 
         }
 
-        // Loading indicator di bottom
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 48.dp)
-                .alpha(alpha)
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                repeat(3) { index ->
-                    val dotAlpha by infiniteTransition.animateFloat(
-                        initialValue = 0.3f,
-                        targetValue = 1f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(600, delayMillis = index * 200),
-                            repeatMode = RepeatMode.Reverse
-                        ),
-                        label = "dot$index"
-                    )
 
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .background(
-                                color = Color(0xFF4A5D23),
-                                shape = androidx.compose.foundation.shape.CircleShape
-                            )
-                            .alpha(dotAlpha)
-                    )
-                }
-            }
-        }
     }
 }

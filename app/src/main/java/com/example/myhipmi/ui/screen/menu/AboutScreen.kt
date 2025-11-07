@@ -66,7 +66,7 @@ fun AboutContent(modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .background(Color.White)
+            .background(Color(0xFFF8FAF9))
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

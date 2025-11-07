@@ -61,7 +61,7 @@ fun RapatScreen(navController: NavHostController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(White)
+                .background(Color(0xFFF8FAF9))
         ) {
             // === Tab Bar ===
             TabRow(

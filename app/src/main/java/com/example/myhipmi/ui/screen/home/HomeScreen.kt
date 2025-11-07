@@ -245,10 +245,13 @@ fun HomeScreen(
         userName = "Nagita Slavina",
         userRole = "Sekretaris Umum",
         onProfileClick = {
-            onNavigateToProfile()
+            navController.navigate("profile")
             isMenuVisible = false
         },
-        onAboutClick = { onNavigateToAbout() },
+        onAboutClick = { 
+            navController.navigate("about")
+            isMenuVisible = false
+        },
         onLogoutClick = onLogout
     )
 }

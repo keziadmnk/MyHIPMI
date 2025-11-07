@@ -49,7 +49,7 @@ fun DetailEventScreen(navController: NavController) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFFFFFFF))
+                    .background(Color(0xFFF8FAF9))
                     .padding(innerPadding)
                     .padding(vertical = 16.dp, horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
