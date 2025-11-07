@@ -65,6 +65,7 @@ fun EventScreen(navController: NavHostController) {
             ) {
                 items(3) {
                     EventCard(
+                        navController = navController,
                         title = "Seminar Kewirausahaan Nasional",
                         date = "15 Oktober 2025",
                         time = "14:00 WIB",
@@ -79,6 +80,7 @@ fun EventScreen(navController: NavHostController) {
 
 @Composable
 fun EventCard(
+    navController: NavHostController,
     title: String,
     date: String,
     time: String,
@@ -128,6 +130,7 @@ fun EventCard(
                             text = { Text("Detail") },
                             onClick = {
                                 showMenu = false
+                                navController.navigate("detail_event")
                             },
                             leadingIcon = {
                                 Icon(Icons.Default.Info, contentDescription = null, tint = GreenPrimary)

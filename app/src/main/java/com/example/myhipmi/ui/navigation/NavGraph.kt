@@ -19,6 +19,7 @@ import com.example.myhipmi.ui.screen.profile.ProfileScreen
 import com.example.myhipmi.ui.screen.rapat.AddRapatScreen
 import com.example.myhipmi.ui.screen.rapat.RapatDetailScreen
 import com.example.myhipmi.ui.screen.rapat.RapatScreen
+import com.example.myhipmi.ui.screens.DetailEventScreen
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -85,6 +86,11 @@ fun NavGraph(navController: NavHostController) {
             )
         ) { backStackEntry: NavBackStackEntry ->
             RapatDetailScreen(navController, backStackEntry)
+        }
+
+        // === Detail Event ===
+        composable("detail_event") {
+            DetailEventScreen(navController = navController)
         }
     }
 }
