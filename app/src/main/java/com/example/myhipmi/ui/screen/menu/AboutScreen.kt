@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,6 +27,7 @@ import androidx.navigation.NavController
 import com.example.myhipmi.R
 import com.example.myhipmi.ui.components.MyHipmiTopBar
 import com.example.myhipmi.ui.components.MenuDrawer
+import com.example.myhipmi.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,41 +138,66 @@ fun AboutContent(modifier: Modifier = Modifier) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-//        DeveloperCard(name = "Nayla Thahira Medilan", nim = "231512006", photo = R.drawable.nayla)
-//        DeveloperCard(name = "Kezia Valerina Damanik", nim = "231512010", photo = R.drawable.kezia)
-//        DeveloperCard(name = "Fachri Akbar", nim = "231512004", photo = R.drawable.fachri)
-//        DeveloperCard(name = "Aisyah Insani Aulia", nim = "231512024", photo = R.drawable.aisyah)
+        DeveloperCard(name = "Nayla Thahira Meldian", nim = "2311521006")
+        DeveloperCard(name = "Kezia Valerina Damanik", nim = "2311522010")
+        DeveloperCard(name = "Fachri Akbar", nim = "2311523004")
+        DeveloperCard(name = "Aisyah Insani Aulia", nim = "2311523024")
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
 @Composable
-fun DeveloperCard(name: String, nim: String, photo: Int) {
+fun DeveloperCard(name: String, nim: String) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FFF5)),
-        border = BorderStroke(1.dp, Color(0xFFD7EBD1))
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = CardGreen),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(
             modifier = Modifier
-                .padding(12.dp)
+                .padding(16.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                painter = painterResource(id = photo),
-                contentDescription = name,
+            // Icon avatar dengan background hijau
+            Box(
                 modifier = Modifier
-                    .size(45.dp)
-                    .background(Color.White, CircleShape),
-                contentScale = ContentScale.Crop
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(text = name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(text = nim, fontSize = 12.sp, color = Color.Gray)
+                    .size(56.dp)
+                    .background(
+                        color = PrimaryGreen.copy(alpha = 0.2f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = name,
+                    tint = PrimaryGreen,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = name,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = TextPrimary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "NIM: $nim",
+                    fontSize = 13.sp,
+                    color = TextSecondary
+                )
             }
         }
     }
