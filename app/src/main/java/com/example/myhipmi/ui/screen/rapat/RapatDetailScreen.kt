@@ -67,6 +67,7 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
         },
         bottomBar = {
             BottomNavBarContainer(
+                navController = navController,
                 onHome = { navController.navigate("home") },
                 onKas = { navController.navigate("kas") },
                 onRapat = { navController.navigate("rapat") },

@@ -21,6 +21,7 @@ fun PiketScreen(navController: NavHostController) {
         },
         bottomBar = {
             BottomNavBarContainer(
+                navController = navController,
                 onHome = { navController.navigate("home") },
                 onKas = { navController.navigate("kas") },
                 onRapat = { navController.navigate("rapat") },

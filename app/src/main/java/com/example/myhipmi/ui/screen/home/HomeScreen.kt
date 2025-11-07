@@ -27,11 +27,22 @@ import com.example.myhipmi.ui.components.BottomNavBar
 import com.example.myhipmi.ui.components.MenuDrawer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 
+data class NavItem(val route: String, val index: Int)
 
+val bottomBarItems = listOf(
+    NavItem("home", 0),
+    NavItem("kas", 1),
+    NavItem("rapat", 2),
+    NavItem("piket", 3),
+    NavItem("event", 4)
+)
 
 @Composable
 fun HomeScreen(
+    navController: NavHostController,
     onNavigateToKas: () -> Unit = {},
     onNavigateToRapat: () -> Unit = {},
     onNavigateToPiket: () -> Unit = {},
@@ -53,11 +64,12 @@ fun HomeScreen(
     Scaffold(
         bottomBar = {
             BottomNavBarContainer(
-                onHome = {},
-                onKas = onNavigateToKas,
-                onRapat = onNavigateToRapat,
-                onPiket = onNavigateToPiket,
-                onEvent = onNavigateToEvent
+                navController = navController, // <-- Teruskan NavController
+                onHome = { navController.navigate("home") },
+                onKas = { navController.navigate("kas") },
+                onRapat = { navController.navigate("rapat") },
+                onPiket = { navController.navigate("piket") },
+                onEvent = { navController.navigate("event") }
             )
         }
     ) { innerPadding ->
@@ -363,18 +375,26 @@ fun ActivityItem(
  */
 @Composable
 fun BottomNavBarContainer(
+    navController: NavHostController,
     onHome: () -> Unit,
     onKas: () -> Unit,
     onRapat: () -> Unit,
     onPiket: () -> Unit,
     onEvent: () -> Unit
 ) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    // Dapatkan rute saat ini. substringBefore('/') digunakan untuk menangani rute dengan argumen (contoh: rapat_detail).
+    val currentRoute = navBackStackEntry?.destination?.route?.substringBefore('/')
+
+    // Cari index yang sesuai dengan rute saat ini. Default ke 0 (Home) jika tidak ditemukan.
+    val selectedIndex = bottomBarItems.find { it.route == currentRoute }?.index ?: 0 //
     Surface(
         color = Color(0xFFDDECCF),
         shadowElevation = 4.dp,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         BottomNavBar(
+            selectedIndex = selectedIndex,
             onHome = onHome,
             onKas = onKas,
             onRapat = onRapat,

@@ -43,8 +43,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.myhipmi.ui.components.BottomNavBar
+import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
 import com.example.myhipmi.ui.theme.MyHIPMITheme
 
 data class Transaction(
@@ -95,8 +97,8 @@ fun KasScreen(
             )
         },
         bottomBar = {
-            BottomNavBar(
-                selectedIndex = 1,
+            BottomNavBarContainer(
+                navController = navController as NavHostController, // <-- Cast diperlukan karena signature NavController, tapi Anda bisa ubah signature-nya.
                 onHome = onHome,
                 onKas = onKas,
                 onRapat = onRapat,

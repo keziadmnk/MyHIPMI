@@ -30,15 +30,7 @@ fun AddEventScreen(navController: NavHostController) {
                 onBackClick = { navController.popBackStack() }
             )
         },
-        bottomBar = {
-            BottomNavBar(
-                onHome = { navController.navigate("home") },
-                onKas = { navController.navigate("kas") },
-                onRapat = { navController.navigate("rapat") },
-                onPiket = { navController.navigate("piket") },
-                onEvent = { navController.navigate("event") }
-            )
-        }
+
     ) { innerPadding ->
         // State variables
         var namaEvent by remember { mutableStateOf("") }

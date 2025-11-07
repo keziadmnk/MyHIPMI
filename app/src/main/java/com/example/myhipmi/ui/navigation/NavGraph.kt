@@ -46,13 +46,7 @@ fun NavGraph(navController: NavHostController) {
         // === Home ===
         composable("home") {
             HomeScreen(
-                onNavigateToKas = { navController.navigate("kas") },
-                onNavigateToRapat = { navController.navigate("rapat") },
-                onNavigateToPiket = { navController.navigate("piket") },
-                onNavigateToEvent = { navController.navigate("event") },
-                onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToAbout = { navController.navigate("about") },
-                onLogout = { navController.navigate("login") }
+                navController = navController // <-- Tambahkan ini
             )
         }
 
