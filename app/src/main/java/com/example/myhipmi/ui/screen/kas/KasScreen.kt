@@ -34,6 +34,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +50,8 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.myhipmi.ui.components.BottomNavBar
+import com.example.myhipmi.ui.components.MyHipmiTopBar
+import com.example.myhipmi.ui.components.MenuDrawer
 import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
 import com.example.myhipmi.ui.theme.MyHIPMITheme
 
@@ -79,23 +85,17 @@ fun KasScreen(
     onPiket: () -> Unit,
     onEvent: () -> Unit
 ) {
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Kas", fontWeight = FontWeight.Bold) },
-                actions = {
-                    IconButton(onClick = { /*TODO*/ }) {
-                        Icon(Icons.Default.Notifications, contentDescription = "Notifications")
-                    }
-                    IconButton(onClick = { /*TODO*/ }) {
-                        Icon(Icons.Default.Menu, contentDescription = "Menu")
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.Transparent
+    var isMenuVisible by remember { mutableStateOf(false) }
+    
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                MyHipmiTopBar(
+                    title = "Kas",
+                    onBackClick = { (navController as NavHostController).popBackStack() },
+                    onMenuClick = { isMenuVisible = true }
                 )
-            )
-        },
+            },
         bottomBar = {
             BottomNavBarContainer(
                 navController = navController as NavHostController, // <-- Cast diperlukan karena signature NavController, tapi Anda bisa ubah signature-nya.
@@ -147,6 +147,27 @@ fun KasScreen(
                 Text("Lihat Riwayat Lengkap", color = Color.Black)
             }
         }
+    }
+    
+        // Menu Drawer
+        MenuDrawer(
+            isVisible = isMenuVisible,
+            onDismiss = { isMenuVisible = false },
+            userName = "Nagita Slavina",
+            userRole = "Sekretaris Umum",
+            onProfileClick = {
+                isMenuVisible = false
+                (navController as NavHostController).navigate("profile")
+            },
+            onAboutClick = {
+                isMenuVisible = false
+                (navController as NavHostController).navigate("about")
+            },
+            onLogoutClick = {
+                isMenuVisible = false
+                // TODO: Handle logout
+            }
+        )
     }
 }
 

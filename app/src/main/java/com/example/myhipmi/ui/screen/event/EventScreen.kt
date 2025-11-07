@@ -27,19 +27,24 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.myhipmi.R
 import com.example.myhipmi.ui.components.MyHipmiTopBar
+import com.example.myhipmi.ui.components.MenuDrawer
 import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
 import com.example.myhipmi.ui.theme.*
 import kotlinx.coroutines.delay
 
 @Composable
 fun EventScreen(navController: NavHostController) {
-    Scaffold(
-        topBar = {
-            MyHipmiTopBar(
-                title = "Event HIPMI",
-                onBackClick = { navController.popBackStack() }
-            )
-        },
+    var isMenuVisible by remember { mutableStateOf(false) }
+    
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                MyHipmiTopBar(
+                    title = "Event HIPMI",
+                    onBackClick = { navController.popBackStack() },
+                    onMenuClick = { isMenuVisible = true }
+                )
+            },
         bottomBar = {
             BottomNavBarContainer(
                 navController = navController,
@@ -123,6 +128,27 @@ fun EventScreen(navController: NavHostController) {
                 }
             }
         }
+    }
+    
+        // Menu Drawer
+        MenuDrawer(
+            isVisible = isMenuVisible,
+            onDismiss = { isMenuVisible = false },
+            userName = "Nagita Slavina",
+            userRole = "Sekretaris Umum",
+            onProfileClick = {
+                isMenuVisible = false
+                navController.navigate("profile")
+            },
+            onAboutClick = {
+                isMenuVisible = false
+                navController.navigate("about")
+            },
+            onLogoutClick = {
+                isMenuVisible = false
+                // TODO: Handle logout
+            }
+        )
     }
 }
 

@@ -20,21 +20,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.myhipmi.ui.components.MyHipmiTopBar
+import com.example.myhipmi.ui.components.MenuDrawer
 import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
 import com.example.myhipmi.ui.theme.*
 
 @Composable
 fun RapatScreen(navController: NavHostController) {
     var selectedTab by remember { mutableStateOf(0) }
+    var isMenuVisible by remember { mutableStateOf(false) }
     val tabs = listOf("Berlangsung", "Selesai")
 
-    Scaffold(
-        topBar = {
-            MyHipmiTopBar(
-                title = "Agenda Rapat",
-                onBackClick = { navController.popBackStack() }
-            )
-        },
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                MyHipmiTopBar(
+                    title = "Agenda Rapat",
+                    onBackClick = { navController.popBackStack() },
+                    onMenuClick = { isMenuVisible = true }
+                )
+            },
         bottomBar = {
             BottomNavBarContainer(
                 navController = navController,
@@ -100,6 +104,27 @@ fun RapatScreen(navController: NavHostController) {
                 1 -> RapatListContent(navController, getRapatSelesai(), isSelesai = true)
             }
         }
+    }
+    
+        // Menu Drawer
+        MenuDrawer(
+            isVisible = isMenuVisible,
+            onDismiss = { isMenuVisible = false },
+            userName = "Nagita Slavina",
+            userRole = "Sekretaris Umum",
+            onProfileClick = {
+                isMenuVisible = false
+                navController.navigate("profile")
+            },
+            onAboutClick = {
+                isMenuVisible = false
+                navController.navigate("about")
+            },
+            onLogoutClick = {
+                isMenuVisible = false
+                // TODO: Handle logout
+            }
+        )
     }
 }
 

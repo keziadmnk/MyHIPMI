@@ -1,12 +1,9 @@
 package com.example.myhipmi.ui.screen.rapat
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,34 +13,30 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.myhipmi.ui.components.MyHipmiTopBar
-import com.example.myhipmi.ui.components.BottomNavBar
+import com.example.myhipmi.ui.components.MenuDrawer
 import com.example.myhipmi.ui.theme.GreenMain
 import com.example.myhipmi.ui.theme.GreenPrimary
 import com.example.myhipmi.ui.theme.White
 
 @Composable
 fun AddRapatScreen(navController: NavHostController) {
-    Scaffold(
-        topBar = {
-            MyHipmiTopBar(
-                title = "Rapat",
-                onBackClick = { navController.popBackStack() }
-            )
-        },
-        bottomBar = {
-            BottomNavBar(
-                onHome = { navController.navigate("home") },
-                onKas = { navController.navigate("kas") },
-                onRapat = { navController.navigate("rapat") },
-                onPiket = { navController.navigate("piket") },
-                onEvent = { navController.navigate("event") }
-            )
-        }
-    ) { innerPadding ->
+    var isMenuVisible by remember { mutableStateOf(false) }
+    
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                MyHipmiTopBar(
+                    title = "Rapat",
+                    onBackClick = { navController.popBackStack() },
+                    onMenuClick = { isMenuVisible = true }
+                )
+            }
+        ) { innerPadding ->
         // State input form
         var namaRapat by remember { mutableStateOf("") }
         var tanggal by remember { mutableStateOf("") }
         var waktu by remember { mutableStateOf("") }
+        var lokasi by remember { mutableStateOf("") }
         var batasAbsensi by remember { mutableStateOf("") }
         var deskripsi by remember { mutableStateOf("") }
 
@@ -71,15 +64,9 @@ fun AddRapatScreen(navController: NavHostController) {
             item { RapatTextField("Nama Rapat", namaRapat) { namaRapat = it } }
             item { RapatTextField("Tanggal", tanggal) { tanggal = it } }
             item { RapatTextField("Waktu", waktu) { waktu = it } }
+            item { RapatTextField("Lokasi", lokasi) { lokasi = it } }
             item { RapatTextField("Batas Waktu Absensi", batasAbsensi) { batasAbsensi = it } }
             item { RapatTextField("Deskripsi", deskripsi) { deskripsi = it } }
-
-            // Area Upload File (opsional)
-            item {
-                Spacer(modifier = Modifier.height(12.dp))
-                FileUploadArea(onClick = { /* TODO: aksi upload file notulen/agenda */ })
-                Spacer(modifier = Modifier.height(24.dp))
-            }
 
             item {
                 Row(
@@ -100,6 +87,27 @@ fun AddRapatScreen(navController: NavHostController) {
                 }
             }
         }
+    }
+    
+        // Menu Drawer
+        MenuDrawer(
+            isVisible = isMenuVisible,
+            onDismiss = { isMenuVisible = false },
+            userName = "Nagita Slavina",
+            userRole = "Sekretaris Umum",
+            onProfileClick = {
+                isMenuVisible = false
+                navController.navigate("profile")
+            },
+            onAboutClick = {
+                isMenuVisible = false
+                navController.navigate("about")
+            },
+            onLogoutClick = {
+                isMenuVisible = false
+                // TODO: Handle logout
+            }
+        )
     }
 }
 
@@ -133,38 +141,3 @@ fun RapatTextField(label: String, value: String, onValueChange: (String) -> Unit
     }
 }
 
-@Composable
-fun FileUploadArea(onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
-        color = GreenMain,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(100.dp)
-            .border(
-                width = 2.dp,
-                color = GreenPrimary.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(10.dp)
-            )
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.CloudUpload,
-                contentDescription = "Upload File",
-                tint = GreenPrimary,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Tarik & Lepaskan File atau Klik untuk Unggah",
-                color = Color(0xFFB0B0B0),
-                fontSize = 14.sp
-            )
-        }
-    }
-}

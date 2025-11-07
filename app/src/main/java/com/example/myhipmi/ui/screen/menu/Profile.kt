@@ -199,6 +199,14 @@ fun ProfileScreen(navController: NavController) {
             onProfileClick = {
                 isMenuVisible = false
                 navController.navigate("profile")
+            },
+            onAboutClick = {
+                isMenuVisible = false
+                navController.navigate("about")
+            },
+            onLogoutClick = {
+                isMenuVisible = false
+                // TODO: Handle logout
             }
         )
     }

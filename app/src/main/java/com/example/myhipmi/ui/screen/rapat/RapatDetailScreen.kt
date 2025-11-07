@@ -26,7 +26,7 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.myhipmi.ui.components.MyHipmiTopBar
-import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
+import com.example.myhipmi.ui.components.MenuDrawer
 import com.example.myhipmi.ui.theme.*
 
 @Composable
@@ -38,6 +38,7 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
     val isDone = backStackEntry.arguments?.getString("isDone")?.toBoolean() ?: false
 
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var isMenuVisible by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
@@ -58,23 +59,15 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
         }
     }
 
-    Scaffold(
-        topBar = {
-            MyHipmiTopBar(
-                title = "Detail Rapat",
-                onBackClick = { navController.popBackStack() }
-            )
-        },
-        bottomBar = {
-            BottomNavBarContainer(
-                navController = navController,
-                onHome = { navController.navigate("home") },
-                onKas = { navController.navigate("kas") },
-                onRapat = { navController.navigate("rapat") },
-                onPiket = { navController.navigate("piket") },
-                onEvent = { navController.navigate("event") }
-            )
-        }
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                MyHipmiTopBar(
+                    title = "Detail Rapat",
+                    onBackClick = { navController.popBackStack() },
+                    onMenuClick = { isMenuVisible = true }
+                )
+            }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -146,6 +139,27 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
                 }
             }
         }
+    }
+    
+        // Menu Drawer
+        MenuDrawer(
+            isVisible = isMenuVisible,
+            onDismiss = { isMenuVisible = false },
+            userName = "Nagita Slavina",
+            userRole = "Sekretaris Umum",
+            onProfileClick = {
+                isMenuVisible = false
+                navController.navigate("profile")
+            },
+            onAboutClick = {
+                isMenuVisible = false
+                navController.navigate("about")
+            },
+            onLogoutClick = {
+                isMenuVisible = false
+                // TODO: Handle logout
+            }
+        )
     }
 }
 

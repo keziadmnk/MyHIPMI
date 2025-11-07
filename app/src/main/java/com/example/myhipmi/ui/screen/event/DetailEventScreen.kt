@@ -23,11 +23,13 @@ import androidx.navigation.NavController
 import com.example.myhipmi.R
 import com.example.myhipmi.ui.components.BottomNavBar
 import com.example.myhipmi.ui.components.MyHipmiTopBar
+import com.example.myhipmi.ui.components.MenuDrawer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailEventScreen(navController: NavController) {
     var selectedIndex by remember { mutableStateOf(4) }
+    var isMenuVisible by remember { mutableStateOf(false) }
 
     val darkGreen = Color(0xFF3B643A)
     val borderGreen = Color(0xFFD8E4A0)
@@ -38,13 +40,15 @@ fun DetailEventScreen(navController: NavController) {
     val blackIcon = Color(0xFF333333)
     val greenIcon = Color(0xFF3B643A)
 
-    Scaffold(
-        topBar = {
-            MyHipmiTopBar(
-                title = "Detail Event",
-                onBackClick = { navController.popBackStack() }
-            )
-        },
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                MyHipmiTopBar(
+                    title = "Detail Event",
+                    onBackClick = { navController.popBackStack() },
+                    onMenuClick = { isMenuVisible = true }
+                )
+            },
         content = { innerPadding ->
             Column(
                 modifier = Modifier
@@ -130,6 +134,27 @@ fun DetailEventScreen(navController: NavController) {
             }
         }
     )
+    
+        // Menu Drawer
+        MenuDrawer(
+            isVisible = isMenuVisible,
+            onDismiss = { isMenuVisible = false },
+            userName = "Nagita Slavina",
+            userRole = "Sekretaris Umum",
+            onProfileClick = {
+                isMenuVisible = false
+                navController.navigate("profile")
+            },
+            onAboutClick = {
+                isMenuVisible = false
+                navController.navigate("about")
+            },
+            onLogoutClick = {
+                isMenuVisible = false
+                // TODO: Handle logout
+            }
+        )
+    }
 }
 
 @Composable
