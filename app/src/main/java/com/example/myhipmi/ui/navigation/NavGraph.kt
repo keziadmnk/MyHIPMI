@@ -15,6 +15,7 @@ import com.example.myhipmi.ui.screen.landing.LandingPage
 import com.example.myhipmi.ui.screen.login.LoginPage
 import com.example.myhipmi.ui.screen.menu.AboutScreen
 import com.example.myhipmi.ui.screen.menu.ProfileScreen
+import com.example.myhipmi.ui.screen.piket.DetailPiketScreen
 import com.example.myhipmi.ui.screen.piket.PiketScreen
 import com.example.myhipmi.ui.screen.rapat.AddRapatScreen
 import com.example.myhipmi.ui.screen.rapat.RapatDetailScreen
@@ -63,6 +64,7 @@ fun NavGraph(navController: NavHostController) {
         }
         composable("rapat") { RapatScreen(navController) }
         composable("piket") { PiketScreen(navController) }
+        composable("piket/upload") { DetailPiketScreen(navController) }
         composable("event") { EventScreen(navController) }
 
         // === Add screens ===
