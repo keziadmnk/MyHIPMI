@@ -22,8 +22,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.myhipmi.R
 import com.example.myhipmi.ui.components.BottomNavBar
-import com.example.myhipmi.ui.components.MyHipmiTopBar
 import com.example.myhipmi.ui.components.MenuDrawer
+import com.example.myhipmi.ui.components.MyHipmiTopBar
+import com.example.myhipmi.ui.screens.InfoItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

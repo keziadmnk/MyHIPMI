@@ -25,18 +25,23 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myhipmi.R
+import com.example.myhipmi.data.local.UserSessionManager
 import com.example.myhipmi.data.remote.request.LoginRequest
 import com.example.myhipmi.data.remote.retrofit.ApiConfig
 import com.example.myhipmi.ui.theme.GreenPrimary
 import com.example.myhipmi.ui.theme.White
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun LoginPage(
     onLoginSuccess: () -> Unit,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
+    val sessionManager = remember { UserSessionManager(context) }
     val apiService = remember { ApiConfig.getApiService() }
 
     var email by remember { mutableStateOf("") }
@@ -267,7 +272,17 @@ fun LoginPage(
                                 val body = response.body()
                                 val hasToken = !body?.token.isNullOrBlank()
 
-                                if (hasToken) {
+                                if (hasToken && body != null) {
+                                    // Simpan data user ke session
+                                    val user = body.user
+                                    if (user != null && user.idPengurus != null) {
+                                        sessionManager.saveUserSession(
+                                            idPengurus = user.idPengurus,
+                                            namaPengurus = user.namaPengurus ?: "",
+                                            emailPengurus = user.emailPengurus ?: "",
+                                            token = body.token ?: ""
+                                        )
+                                    }
                                     onLoginSuccess()
                                 } else {
                                     errorMessage = body?.message ?: "Login gagal"

@@ -22,10 +22,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.myhipmi.R
+import com.example.myhipmi.data.remote.response.EventItemResponse
+import com.example.myhipmi.data.remote.response.ReadEventResponse
+import com.example.myhipmi.data.remote.retrofit.ApiConfig
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
 import com.example.myhipmi.ui.components.MyHipmiTopBar
 import com.example.myhipmi.ui.components.MenuDrawer
 import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
@@ -35,7 +42,41 @@ import kotlinx.coroutines.delay
 @Composable
 fun EventScreen(navController: NavHostController) {
     var isMenuVisible by remember { mutableStateOf(false) }
-    
+    var eventList by remember { mutableStateOf<List<EventItemResponse>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val apiService = remember { ApiConfig.getApiService() }
+    val coroutineScope = rememberCoroutineScope()
+
+    // Function untuk load events
+    fun loadEvents() {
+        coroutineScope.launch {
+            isLoading = true
+            errorMessage = null
+            try {
+                val response = apiService.getEvents()
+
+                if (response.isSuccessful) {
+                    eventList = response.body()?.events ?: emptyList()
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    errorMessage = errorBody?.takeIf { it.isNotBlank() }
+                        ?: "Gagal memuat data event (${response.code()})"
+                }
+            } catch (e: Exception) {
+                errorMessage = "Koneksi gagal: ${e.localizedMessage ?: e.message}"
+                e.printStackTrace()
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    // Load events saat pertama kali screen muncul
+    LaunchedEffect(Unit) {
+        loadEvents()
+    }
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
@@ -102,28 +143,115 @@ fun EventScreen(navController: NavHostController) {
                 cardsVisible = true
             }
             
-            LazyColumn(
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(3) { index ->
-                    AnimatedVisibility(
-                        visible = cardsVisible,
-                        enter = fadeIn(
-                            animationSpec = tween(500, delayMillis = index * 100)
-                        ) + slideInVertically(
-                            initialOffsetY = { 50 },
-                            animationSpec = tween(500, delayMillis = index * 100)
-                        )
+            // Loading State
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        EventCard(
-                            navController = navController,
-                            title = "Seminar Kewirausahaan Nasional",
-                            date = "15 Oktober 2025",
-                            time = "14:00 WIB",
-                            location = "Seminar PKM",
-                            description = "Seminar nasional tentang bisnis digital dan strategi kewirausahaan modern."
+                        CircularProgressIndicator(color = GreenPrimary)
+                        Text(
+                            text = "Memuat data event...",
+                            color = TextSecondary,
+                            fontSize = 14.sp
                         )
+                    }
+                }
+            }
+            // Error State
+            else if (errorMessage != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = null,
+                            tint = RedPrimary,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Text(
+                            text = errorMessage ?: "Terjadi kesalahan",
+                            color = TextSecondary,
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center
+                        )
+                        Button(
+                            onClick = { loadEvents() },
+                            colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary)
+                        ) {
+                            Text("Coba Lagi")
+                        }
+                    }
+                }
+            }
+            // Empty State
+            else if (eventList.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.EventBusy,
+                            contentDescription = null,
+                            tint = TextSecondary,
+                            modifier = Modifier.size(64.dp)
+                        )
+                        Text(
+                            text = "Belum ada event",
+                            color = TextSecondary,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "Klik tombol + untuk menambah event baru",
+                            color = TextSecondary,
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+            // Event List
+            else {
+                LazyColumn(
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(eventList.size) { index ->
+                        val event = eventList[index]
+                        AnimatedVisibility(
+                            visible = cardsVisible,
+                            enter = fadeIn(
+                                animationSpec = tween(500, delayMillis = index * 100)
+                            ) + slideInVertically(
+                                initialOffsetY = { 50 },
+                                animationSpec = tween(500, delayMillis = index * 100)
+                            )
+                        ) {
+                            EventCard(
+                                navController = navController,
+                                event = event
+                            )
+                        }
                     }
                 }
             }
@@ -155,12 +283,24 @@ fun EventScreen(navController: NavHostController) {
 @Composable
 fun EventCard(
     navController: NavHostController,
-    title: String,
-    date: String,
-    time: String,
-    location: String,
-    description: String
+    event: EventItemResponse
 ) {
+    // Format tanggal dari YYYY-MM-DD ke format Indonesia
+    val formattedDate = try {
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val outputFormat = SimpleDateFormat("dd MMMM yyyy", Locale("id", "ID"))
+        val date = inputFormat.parse(event.tanggal)
+        date?.let { outputFormat.format(it) } ?: event.tanggal
+    } catch (e: Exception) {
+        event.tanggal
+    }
+
+    // Format waktu dari HH:MM:SS ke HH:MM
+    val formattedTime = try {
+        event.waktu.substring(0, 5) + " WIB"
+    } catch (e: Exception) {
+        event.waktu
+    }
     var showMenu by remember { mutableStateOf(false) }
     var isPressed by remember { mutableStateOf(false) }
     
@@ -197,7 +337,7 @@ fun EventCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = title,
+                    text = event.namaEvent,
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
                     color = Color(0xFF1F2937),
@@ -225,6 +365,7 @@ fun EventCard(
                             text = { Text("Detail") },
                             onClick = {
                                 showMenu = false
+                                // TODO: Navigate dengan event ID
                                 navController.navigate("detail_event")
                             },
                             leadingIcon = {
@@ -277,9 +418,9 @@ fun EventCard(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    DetailRow(Icons.Default.CalendarMonth, date, Color(0xFFEF4444))
-                    DetailRow(Icons.Default.AccessTime, time, Color(0xFF3B82F6))
-                    DetailRow(Icons.Default.LocationOn, location, Color(0xFF8B5CF6))
+                    DetailRow(Icons.Default.CalendarMonth, formattedDate, Color(0xFFEF4444))
+                    DetailRow(Icons.Default.AccessTime, formattedTime, Color(0xFF3B82F6))
+                    DetailRow(Icons.Default.LocationOn, event.tempat, Color(0xFF8B5CF6))
                 }
             }
         }
