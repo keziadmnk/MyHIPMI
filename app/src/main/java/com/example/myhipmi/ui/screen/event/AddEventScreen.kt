@@ -3,6 +3,7 @@ package com.example.myhipmi.ui.screen.event
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.net.Uri
+import android.view.PixelCopy.request
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -41,6 +42,14 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import android.widget.Toast
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import com.example.myhipmi.utils.FileUtil
+import com.example.myhipmi.utils.toPlainRequestBody
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 
 @Composable
 fun AddEventScreen(navController: NavHostController) {
@@ -82,7 +91,7 @@ fun AddEventScreen(navController: NavHostController) {
             val apiService = remember { ApiConfig.getApiService() }
             var fileUri by remember { mutableStateOf<Uri?>(null) }
             
-            // Ambil id_pengurus dari session
+
             val idPengurus = remember { sessionManager.getIdPengurus() }
             val filePickerLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.GetContent()
@@ -95,7 +104,6 @@ fun AddEventScreen(navController: NavHostController) {
                     { _, year, month, dayOfMonth ->
                         val selectedCalendar = Calendar.getInstance()
                         selectedCalendar.set(year, month, dayOfMonth)
-                        // Format tanggal menjadi YYYY-MM-DD (format standar DB)
                         tanggal = SimpleDateFormat(
                             "yyyy-MM-dd",
                             Locale.getDefault()
@@ -114,12 +122,11 @@ fun AddEventScreen(navController: NavHostController) {
                         val selectedCalendar = Calendar.getInstance()
                         selectedCalendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
                         selectedCalendar.set(Calendar.MINUTE, minute)
-                        // Format waktu menjadi HH:MM
                         waktu = SimpleDateFormat("HH:mm", Locale.getDefault()).format(selectedCalendar.time)
                     },
                     calendar.get(Calendar.HOUR_OF_DAY),
                     calendar.get(Calendar.MINUTE),
-                    true // format 24 jam
+                    true
                 )
             }
             LazyColumn(
@@ -299,7 +306,10 @@ fun AddEventScreen(navController: NavHostController) {
                     ) {
                         Column {
                             Spacer(modifier = Modifier.height(8.dp))
-                            ModernFileDragAndDropArea(onClick = { filePickerLauncher.launch("image/*") })
+                            ModernFileDragAndDropArea(
+                                onClick = { filePickerLauncher.launch("image/*") },
+                                fileUri = fileUri
+                            )
                             Spacer(modifier = Modifier.height(24.dp))
                         }
                     }
@@ -307,15 +317,11 @@ fun AddEventScreen(navController: NavHostController) {
 
                 // Tombol "Tambah"
                 item {
-                    AnimatedVisibility(
-                        visible = isVisible,
-                        enter = fadeIn(animationSpec = tween(400, delayMillis = 300)) +
-                                slideInVertically(initialOffsetY = { 30 })
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
                             OutlinedButton(
                                 onClick = { navController.popBackStack() },
                                 enabled = !isLoading,
@@ -339,60 +345,104 @@ fun AddEventScreen(navController: NavHostController) {
 
                             Button(
                                 onClick = {
+                                    android.util.Log.d("AddEventScreen", "Button clicked!")
                                     // Validasi input wajib
                                     errorMessage = null
                                     successMessage = null
                                     
+                                    android.util.Log.d("AddEventScreen", "Validating inputs...")
+                                    android.util.Log.d("AddEventScreen", "namaEvent: '$namaEvent', tanggal: '$tanggal', waktu: '$waktu', tempat: '$tempat', penyelenggara: '$penyelenggara'")
+                                    
                                     if (namaEvent.isBlank() || tanggal.isBlank() || waktu.isBlank() || tempat.isBlank() || penyelenggara.isBlank()) {
                                         errorMessage = "Nama event, tanggal, waktu, tempat, dan penyelenggara wajib diisi"
+                                        android.util.Log.d("AddEventScreen", "Validation failed: missing required fields")
                                         return@Button
                                     }
 
                                     // Validasi id_pengurus
                                     if (idPengurus == null) {
                                         errorMessage = "Anda belum login. Silakan login terlebih dahulu."
+                                        android.util.Log.d("AddEventScreen", "Validation failed: idPengurus is null")
                                         return@Button
                                     }
+                                    
+                                    android.util.Log.d("AddEventScreen", "Validation passed, starting API call...")
 
-                                    // Lakukan panggilan API di Coroutine
+
                                     coroutineScope.launch {
                                         isLoading = true
                                         try {
-                                            val request = EventRequest(
-                                                idPengurus = idPengurus,
-                                                namaEvent = namaEvent,
-                                                tanggal = tanggal,
-                                                waktu = waktu,
-                                                tempat = tempat,
-                                                dresscode = dresscode.takeIf { it.isNotBlank() },
-                                                penyelenggara = penyelenggara,
-                                                contactPerson = contactPerson.takeIf { it.isNotBlank() },
-                                                deskripsi = deskripsi.takeIf { it.isNotBlank() },
-                                                posterUrl = fileUri?.toString()
+                                            android.util.Log.d("AddEventScreen", "Starting event creation...")
+                                            android.util.Log.d("AddEventScreen", "File URI: $fileUri")
+                                            
+                                            val posterPart = fileUri?.let {
+                                                try {
+                                                    android.util.Log.d("AddEventScreen", "Converting URI to File...")
+                                                    val file = FileUtil.from(context, it)
+                                                    android.util.Log.d("AddEventScreen", "File created: ${file.name}, size: ${file.length()} bytes")
+                                                    
+                                                    val requestFile = file
+                                                        .asRequestBody("image/*".toMediaType())
+
+                                                    val part = MultipartBody.Part.createFormData(
+                                                        "poster",
+                                                        file.name,
+                                                        requestFile
+                                                    )
+                                                    android.util.Log.d("AddEventScreen", "MultipartBody.Part created successfully")
+                                                    part
+                                                } catch (e: Exception) {
+                                                    android.util.Log.e("AddEventScreen", "Error creating file part: ${e.message}", e)
+                                                    null
+                                                }
+                                            }
+                                            
+                                            android.util.Log.d("AddEventScreen", "Poster part: ${if (posterPart != null) "Created" else "Null"}")
+
+                                            val response = apiService.createEvent(
+                                                idPengurus.toString().toPlainRequestBody(),
+                                                namaEvent.toPlainRequestBody(),
+                                                tanggal.toPlainRequestBody(),
+                                                waktu.toPlainRequestBody(),
+                                                tempat.toPlainRequestBody(),
+                                                penyelenggara.toPlainRequestBody(),
+                                                dresscode.takeIf { it.isNotBlank() }?.toPlainRequestBody(),
+                                                contactPerson.takeIf { it.isNotBlank() }?.toPlainRequestBody(),
+                                                deskripsi.takeIf { it.isNotBlank() }?.toPlainRequestBody(),
+                                                posterPart
                                             )
 
-                                            val response = apiService.createEvent(request)
+                                            android.util.Log.d("AddEventScreen", "Response code: ${response.code()}, isSuccessful: ${response.isSuccessful()}")
 
                                             if (response.isSuccessful) {
-                                                successMessage = "Event berhasil ditambahkan"
+                                                val responseBody = response.body()
+                                                val posterUrl = responseBody?.event?.posterUrl
+                                                android.util.Log.d("AddEventScreen", "Event created successfully!")
+                                                android.util.Log.d("AddEventScreen", "Poster URL from response: $posterUrl")
+                                                
+                                                if (posterUrl != null) {
+                                                    android.util.Log.d("AddEventScreen", "✅ Foto berhasil disimpan ke database: $posterUrl")
+                                                } else {
+                                                    android.util.Log.w("AddEventScreen", "⚠️ Poster URL null - foto mungkin tidak dikirim")
+                                                }
+                                                
+                                                successMessage = "Event berhasil ditambahkan${if (posterUrl != null) " dengan foto" else ""}"
                                                 Toast.makeText(context, "Event berhasil ditambahkan", Toast.LENGTH_SHORT).show()
-                                                // Tunggu sebentar sebelum navigasi ke EventScreen
                                                 delay(1000)
-                                                // Navigasi langsung ke EventScreen
-                                                // Hapus AddEventScreen dari back stack dan kembali ke EventScreen
                                                 navController.navigate("event") {
-                                                    // Hapus AddEventScreen dari back stack
+
                                                     popUpTo("add_event") { inclusive = true }
-                                                    // Navigasi ke EventScreen
                                                     launchSingleTop = true
                                                 }
                                             } else {
                                                 val errorBody = response.errorBody()?.string()
+                                                android.util.Log.e("AddEventScreen", "❌ Error response: ${response.code()}, body: $errorBody")
                                                 errorMessage = errorBody?.takeIf { it.isNotBlank() }
                                                     ?: "Gagal menambahkan event (${response.code()})"
                                             }
 
                                         } catch (e: Exception) {
+                                            android.util.Log.e("AddEventScreen", "Exception occurred: ${e.message}", e)
                                             errorMessage = "Terjadi kesalahan koneksi: ${e.localizedMessage ?: "Unknown error"}"
                                             e.printStackTrace()
                                         } finally {
@@ -407,9 +457,9 @@ fun AddEventScreen(navController: NavHostController) {
                                     containerColor = GreenPrimary
                                 ),
                                 shape = RoundedCornerShape(12.dp),
-                                enabled = !isLoading // Disable saat loading
+                                enabled = !isLoading
                             ) {
-                                if (isLoading) { // Tampilkan loading indicator
+                                if (isLoading) {
                                     CircularProgressIndicator(
                                         color = White,
                                         strokeWidth = 2.dp,
@@ -433,8 +483,7 @@ fun AddEventScreen(navController: NavHostController) {
                         }
                     }
                 }
-            }
-            // Menu Drawer (ambil nama dari session jika tersedia)
+
             MenuDrawer(
                 isVisible = isMenuVisible,
                 onDismiss = { isMenuVisible = false },
@@ -460,9 +509,12 @@ fun AddEventScreen(navController: NavHostController) {
     }
 }
 
-    // Modern File Upload Area
+
     @Composable
-    fun ModernFileDragAndDropArea(onClick: () -> Unit) {
+    fun ModernFileDragAndDropArea(
+        onClick: () -> Unit,
+        fileUri: Uri? = null
+    ) {
         Surface(
             onClick = onClick,
             shape = RoundedCornerShape(16.dp),
@@ -476,7 +528,7 @@ fun AddEventScreen(navController: NavHostController) {
                 )
                 .border(
                     width = 2.dp,
-                    color = GreenPrimary.copy(alpha = 0.3f),
+                    color = if (fileUri != null) GreenPrimary else GreenPrimary.copy(alpha = 0.3f),
                     shape = RoundedCornerShape(16.dp)
                 )
         ) {
@@ -487,40 +539,74 @@ fun AddEventScreen(navController: NavHostController) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .background(
-                            color = GreenPrimary.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(12.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CloudUpload,
-                        contentDescription = "Upload foto",
-                        tint = GreenPrimary,
-                        modifier = Modifier.size(32.dp)
+                if (fileUri != null) {
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.LightGray.copy(alpha = 0.2f))
+                    ) {
+                        AsyncImage(
+                            model = fileUri,
+                            contentDescription = "Preview Gambar",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.3f))
+                                .clickable(onClick = onClick)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Ubah gambar",
+                                tint = Color.White,
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .align(Alignment.Center)
+                            )
+                        }
+                    }
+                } else {
+
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .background(
+                                color = GreenPrimary.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(12.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CloudUpload,
+                            contentDescription = "Upload foto",
+                            tint = GreenPrimary,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Upload Gambar Event",
+                        color = Color(0xFF1F2937),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Klik atau tarik file ke sini",
+                        color = Color(0xFF9CA3AF),
+                        fontSize = 13.sp
                     )
                 }
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "Upload Gambar Event",
-                    color = Color(0xFF1F2937),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Klik atau tarik file ke sini",
-                    color = Color(0xFF9CA3AF),
-                    fontSize = 13.sp
-                )
             }
         }
     }
 
-        // Modern TextField Component
+
         @Composable
         fun ModernTextField(
             label: String,
@@ -546,7 +632,7 @@ fun AddEventScreen(navController: NavHostController) {
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
-                // Wrap dalam Box dengan clickable untuk field yang memiliki onClick
+
                 if (onClick != null) {
                     Box(
                         modifier = Modifier
@@ -562,7 +648,7 @@ fun AddEventScreen(navController: NavHostController) {
                             value = value,
                             onValueChange = { },
                             readOnly = true,
-                            enabled = false, // Disable untuk mencegah keyboard muncul
+                            enabled = false,
                             modifier = Modifier.fillMaxWidth(),
                             placeholder = {
                                 Text(

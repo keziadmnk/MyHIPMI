@@ -2,9 +2,11 @@ package com.example.myhipmi.ui.screen.event
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -20,12 +22,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import com.example.myhipmi.R
 import com.example.myhipmi.data.remote.response.EventItemResponse
 import com.example.myhipmi.data.remote.response.ReadEventResponse
@@ -45,6 +49,8 @@ fun EventScreen(navController: NavHostController) {
     var eventList by remember { mutableStateOf<List<EventItemResponse>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var eventToDelete by remember { mutableStateOf<EventItemResponse?>(null) }
 
     val apiService = remember { ApiConfig.getApiService() }
     val coroutineScope = rememberCoroutineScope()
@@ -72,6 +78,27 @@ fun EventScreen(navController: NavHostController) {
             }
         }
     }
+    fun handleDeleteConfirmed() {
+        val event = eventToDelete ?: return
+        coroutineScope.launch {
+            try {
+                val response = apiService.deleteEvent(event.idEvent)
+                if (response.isSuccessful) {
+                    // Muat ulang daftar setelah berhasil
+                    loadEvents()
+                    // Optional: Tampilkan Toast sukses
+                    // Toast.makeText(context, response.body()?.message ?: "Event berhasil dihapus", Toast.LENGTH_SHORT).show()
+                } else {
+                    errorMessage = "Gagal menghapus event (${response.code()})"
+                }
+            } catch (e: Exception) {
+                errorMessage = "Koneksi gagal saat menghapus: ${e.localizedMessage}"
+            } finally {
+                showDeleteDialog = false
+                eventToDelete = null
+            }
+        }
+    }
 
     // Load events saat pertama kali screen muncul
     LaunchedEffect(Unit) {
@@ -86,6 +113,7 @@ fun EventScreen(navController: NavHostController) {
                     onMenuClick = { isMenuVisible = true }
                 )
             },
+
         bottomBar = {
             BottomNavBarContainer(
                 navController = navController,
@@ -249,7 +277,10 @@ fun EventScreen(navController: NavHostController) {
                         ) {
                             EventCard(
                                 navController = navController,
-                                event = event
+                                event = event,
+                                onDeleteClick = { eventToDel ->
+                                    eventToDelete = eventToDel
+                                    showDeleteDialog = true   }
                             )
                         }
                     }
@@ -257,7 +288,37 @@ fun EventScreen(navController: NavHostController) {
             }
         }
     }
-    
+
+        AnimatedVisibility(
+            visible = showDeleteDialog && eventToDelete != null,
+            enter = fadeIn(animationSpec = tween(300)) + 
+                   slideInVertically(
+                       initialOffsetY = { it },
+                       animationSpec = spring(
+                           dampingRatio = Spring.DampingRatioMediumBouncy,
+                           stiffness = Spring.StiffnessLow
+                       )
+                   ),
+            exit = fadeOut(animationSpec = tween(300)) + 
+                  slideOutVertically(
+                      targetOffsetY = { it },
+                      animationSpec = spring(
+                          dampingRatio = Spring.DampingRatioMediumBouncy,
+                          stiffness = Spring.StiffnessLow
+                      )
+                  )
+        ) {
+            if (eventToDelete != null) {
+                DeleteEventBottomSheet(
+                    eventName = eventToDelete?.namaEvent ?: "",
+                    onDismiss = { 
+                        showDeleteDialog = false
+                        eventToDelete = null
+                    },
+                    onConfirmDelete = { handleDeleteConfirmed() }
+                )
+            }
+        }
         // Menu Drawer
         MenuDrawer(
             isVisible = isMenuVisible,
@@ -283,9 +344,10 @@ fun EventScreen(navController: NavHostController) {
 @Composable
 fun EventCard(
     navController: NavHostController,
-    event: EventItemResponse
+    event: EventItemResponse,
+    onDeleteClick: (EventItemResponse) -> Unit
 ) {
-    // Format tanggal dari YYYY-MM-DD ke format Indonesia
+
     val formattedDate = try {
         val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val outputFormat = SimpleDateFormat("dd MMMM yyyy", Locale("id", "ID"))
@@ -385,6 +447,7 @@ fun EventCard(
                             text = { Text("Hapus", color = RedPrimary) },
                             onClick = {
                                 showMenu = false
+                                onDeleteClick(event)
                             },
                             leadingIcon = {
                                 Icon(Icons.Default.Delete, contentDescription = null, tint = RedPrimary)
@@ -405,11 +468,15 @@ fun EventCard(
                         .clip(RoundedCornerShape(16.dp))
                         .background(Color(0xFFF3F4F6))
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.myhipmi_logo),
-                        contentDescription = "Event Thumbnail",
-                        modifier = Modifier.fillMaxSize()
+                    AsyncImage(
+                        model = event.posterUrl,
+                        contentDescription = "Poster Event",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(R.drawable.myhipmi_logo),
+                        error = painterResource(R.drawable.myhipmi_logo)
                     )
+
                 }
 
                 Spacer(modifier = Modifier.width(14.dp))
@@ -422,6 +489,154 @@ fun EventCard(
                     DetailRow(Icons.Default.AccessTime, formattedTime, Color(0xFF3B82F6))
                     DetailRow(Icons.Default.LocationOn, event.tempat, Color(0xFF8B5CF6))
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun DeleteEventBottomSheet(
+    eventName: String,
+    onDismiss: () -> Unit,
+    onConfirmDelete: () -> Unit
+) {
+    // Overlay abu-abu dengan efek blur
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.5f))
+            .clickable(
+                onClick = onDismiss,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            )
+    ) {
+        // Bottom Sheet Card dengan animasi slide up dari bawah
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .clickable(
+                    onClick = {},
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ),
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                        // Handle bar untuk visual bottom sheet
+                        Box(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(4.dp)
+                                .background(
+                                    color = TextSecondary.copy(alpha = 0.3f),
+                                    shape = RoundedCornerShape(2.dp)
+                                )
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Icon peringatan
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(
+                                    color = RedPrimary.copy(alpha = 0.15f),
+                                    shape = RoundedCornerShape(32.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Error,
+                                contentDescription = "Warning",
+                                tint = RedPrimary,
+                                modifier = Modifier.size(36.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        // Judul
+                        Text(
+                            text = "Hapus Event?",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Pesan peringatan
+                        Text(
+                            text = "Item ini akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.",
+                            fontSize = 14.sp,
+                            color = TextSecondary,
+                            textAlign = TextAlign.Center,
+                            lineHeight = 20.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(28.dp))
+
+                        // Tombol Hapus
+                        Button(
+                            onClick = onConfirmDelete,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = RedPrimary
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 2.dp,
+                                pressedElevation = 4.dp
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Hapus dari Daftar Event",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Tombol Batalkan
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color.White,
+                                contentColor = TextSecondary
+                            ),
+                            border = BorderStroke(1.5.dp, Color(0xFFE5E7EB)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = "Batalkan",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }

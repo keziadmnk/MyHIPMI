@@ -17,7 +17,9 @@ data class EventData(
     @SerializedName("nama_event")
     val namaEvent: String,
 
+    @SerializedName("poster_url")
+    val posterUrl: String? = null,
+
     @SerializedName("created_at")
-    val createdAt: String,
-    // ... tambahkan field lain yang diperlukan
+    val createdAt: String? = null
 )

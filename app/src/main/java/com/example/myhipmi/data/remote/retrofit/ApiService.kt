@@ -3,6 +3,8 @@ package com.example.myhipmi.data.remote.retrofit
 import com.example.myhipmi.data.remote.request.EventRequest
 import com.example.myhipmi.data.remote.request.LoginRequest
 import com.example.myhipmi.data.remote.response.*
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -13,13 +15,30 @@ interface ApiService {
         @Body request: LoginRequest
     ): Response<LoginResponse>
 
+
+
+    @Multipart
     @POST("events")
     suspend fun createEvent(
-        @Body request: EventRequest
+        @Part("id_pengurus") idPengurus: RequestBody,
+        @Part("nama_event") namaEvent: RequestBody,
+        @Part("tanggal") tanggal: RequestBody,
+        @Part("waktu") waktu: RequestBody,
+        @Part("tempat") tempat: RequestBody,
+        @Part("penyelenggara") penyelenggara: RequestBody,
+        @Part("dresscode") dresscode: RequestBody?,
+        @Part("contact_person") contactPerson: RequestBody?,
+        @Part("deskripsi") deskripsi: RequestBody?,
+        @Part poster: MultipartBody.Part?
     ): Response<EventResponse>
 
     @GET("events")
     suspend fun getEvents(): Response<ReadEventResponse>
+
+    @DELETE("events/{id}")
+    suspend fun deleteEvent(
+        @Path("id") id: Int
+    ): Response<EventResponse>
 
     // ========== AGENDA RAPAT ENDPOINTS ==========
 
