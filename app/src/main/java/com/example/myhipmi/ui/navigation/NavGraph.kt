@@ -81,11 +81,13 @@ fun NavGraph(navController: NavHostController) {
 
         // === Detail Rapat ===
         composable(
-            route = "rapat_detail/{title}/{date}/{time}/{location}/{isDone}",
+            route = "rapat_detail/{idAgenda}/{title}/{date}/{startTime}/{endTime}/{location}/{isDone}",
             arguments = listOf(
+                navArgument("idAgenda") { type = NavType.StringType },
                 navArgument("title") { type = NavType.StringType },
                 navArgument("date") { type = NavType.StringType },
-                navArgument("time") { type = NavType.StringType },
+                navArgument("startTime") { type = NavType.StringType },
+                navArgument("endTime") { type = NavType.StringType },
                 navArgument("location") { type = NavType.StringType },
                 navArgument("isDone") { type = NavType.StringType }
             )

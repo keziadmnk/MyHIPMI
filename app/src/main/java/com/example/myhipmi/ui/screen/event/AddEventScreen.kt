@@ -434,11 +434,11 @@ fun AddEventScreen(navController: NavHostController) {
                     }
                 }
             }
-            // Menu Drawer
+            // Menu Drawer (ambil nama dari session jika tersedia)
             MenuDrawer(
                 isVisible = isMenuVisible,
                 onDismiss = { isMenuVisible = false },
-                userName = "Nagita Slavina",
+                userName = sessionManager.getNamaPengurus() ?: "Pengurus",
                 userRole = "Sekretaris Umum",
                 onProfileClick = {
                     isMenuVisible = false
@@ -450,7 +450,10 @@ fun AddEventScreen(navController: NavHostController) {
                 },
                 onLogoutClick = {
                     isMenuVisible = false
-                    // TODO: Handle logout
+                    sessionManager.clearSession()
+                    navController.navigate("login") {
+                        popUpTo("home") { inclusive = true }
+                    }
                 }
             )
         }
@@ -628,5 +631,3 @@ fun AddEventScreen(navController: NavHostController) {
                 }
             }
         }
-
-

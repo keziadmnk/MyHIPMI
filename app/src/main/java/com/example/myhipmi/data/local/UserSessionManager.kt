@@ -71,5 +71,17 @@ class UserSessionManager(context: Context) {
         editor.clear()
         editor.apply()
     }
+    
+    // Fungsi untuk menyimpan timestamp absen per agenda
+    fun saveAbsenTimestamp(idAgenda: Int, timestamp: String) {
+        val editor = prefs.edit()
+        editor.putString("absen_timestamp_$idAgenda", timestamp)
+        editor.apply()
+    }
+    
+    // Fungsi untuk mengambil timestamp absen per agenda
+    fun getAbsenTimestamp(idAgenda: Int): String? {
+        return prefs.getString("absen_timestamp_$idAgenda", null)
+    }
 }
 

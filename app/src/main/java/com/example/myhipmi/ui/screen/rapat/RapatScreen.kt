@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,18 +20,79 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myhipmi.ui.components.MyHipmiTopBar
 import com.example.myhipmi.ui.components.MenuDrawer
 import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
 import com.example.myhipmi.ui.theme.*
+import com.example.myhipmi.ui.viewmodel.RapatViewModel
+import com.example.myhipmi.data.remote.response.AgendaRapatData
+import com.example.myhipmi.data.local.UserSessionManager
+import androidx.compose.ui.platform.LocalContext
+import java.util.*
 
 @Composable
 fun RapatScreen(navController: NavHostController) {
-    var selectedTab by remember { mutableStateOf(0) }
+    val viewModel: RapatViewModel = viewModel()
+    val context = LocalContext.current
+    val sessionManager = remember { UserSessionManager(context) }
+    // Ambil nama user (nullable) dan gunakan placeholder di UI jika null
+    val loggedInUserName = sessionManager.getNamaPengurus()
+
+    // Collect state dari ViewModel
+    val rapatBerlangsung by viewModel.rapatBerlangsung.collectAsState()
+    val rapatSelesai by viewModel.rapatSelesai.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val successMessage by viewModel.successMessage.collectAsState()
+
+    // Simpan selectedTab dengan rememberSaveable agar bertahan saat back navigation
+    var selectedTab by rememberSaveable { mutableStateOf(0) }
     var isMenuVisible by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-    var selectedRapat by remember { mutableStateOf<RapatItem?>(null) }
+    var selectedRapat by remember { mutableStateOf<AgendaRapatData?>(null) }
     val tabs = listOf("Berlangsung", "Selesai")
+    
+    // Log untuk debug
+    LaunchedEffect(selectedTab) {
+        android.util.Log.d("RapatScreen", "Current selected tab: $selectedTab (${tabs[selectedTab]})")
+    }
+
+    // Track apakah sudah pernah load data
+    var hasLoadedData by remember { mutableStateOf(false) }
+    
+    // Auto-refresh saat screen pertama kali dibuka
+    LaunchedEffect(Unit) {
+        if (!hasLoadedData) {
+            android.util.Log.d("RapatScreen", "Initial load - loading data...")
+            viewModel.loadAllAgenda()
+            hasLoadedData = true
+        }
+    }
+
+    // Refresh saat kembali dari screen lain (hanya sekali, smooth tanpa berkedip)
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    LaunchedEffect(currentBackStackEntry) {
+        if (currentBackStackEntry?.destination?.route == "rapat" && hasLoadedData) {
+            android.util.Log.d("RapatScreen", "Back to screen - refreshing data...")
+            // Single refresh untuk efisiensi
+            viewModel.loadAllAgenda()
+        }
+    }
+
+    // Show snackbar untuk error atau success
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(errorMessage, successMessage) {
+        errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearMessages()
+        }
+        successMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearMessages()
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -41,6 +103,7 @@ fun RapatScreen(navController: NavHostController) {
                     onMenuClick = { isMenuVisible = true }
                 )
             },
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             bottomBar = {
                 // Hilangkan bottom bar saat dialog hapus muncul
                 if (!showDeleteDialog) {
@@ -104,26 +167,36 @@ fun RapatScreen(navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // === Konten Tab ===
-                when (selectedTab) {
-                    0 -> RapatListContent(
-                        navController = navController,
-                        rapatList = getRapatBerlangsung(),
-                        isSelesai = false,
-                        onDeleteClick = { rapat ->
-                            selectedRapat = rapat
-                            showDeleteDialog = true
-                        }
-                    )
-                    1 -> RapatListContent(
-                        navController = navController,
-                        rapatList = getRapatSelesai(),
-                        isSelesai = true,
-                        onDeleteClick = { rapat ->
-                            selectedRapat = rapat
-                            showDeleteDialog = true
-                        }
-                    )
+                // Loading indicator
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = PrimaryGreen)
+                    }
+                } else {
+                    // === Konten Tab ===
+                    when (selectedTab) {
+                        0 -> RapatListContent(
+                            navController = navController,
+                            rapatList = rapatBerlangsung,
+                            isSelesai = false,
+                            onDeleteClick = { rapat ->
+                                selectedRapat = rapat
+                                showDeleteDialog = true
+                            }
+                        )
+                        1 -> RapatListContent(
+                            navController = navController,
+                            rapatList = rapatSelesai,
+                            isSelesai = true,
+                            onDeleteClick = { rapat ->
+                                selectedRapat = rapat
+                                showDeleteDialog = true
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -134,8 +207,8 @@ fun RapatScreen(navController: NavHostController) {
                 rapatTitle = selectedRapat?.title ?: "",
                 onDismiss = { showDeleteDialog = false },
                 onConfirmDelete = {
+                    selectedRapat?.let { viewModel.deleteAgenda(it.idAgenda) }
                     showDeleteDialog = false
-                    // TODO: Implement actual delete when backend is ready
                 }
             )
         }
@@ -144,7 +217,7 @@ fun RapatScreen(navController: NavHostController) {
         MenuDrawer(
             isVisible = isMenuVisible,
             onDismiss = { isMenuVisible = false },
-            userName = "Nagita Slavina",
+            userName = loggedInUserName ?: "Pengurus",
             userRole = "Sekretaris Umum",
             onProfileClick = {
                 isMenuVisible = false
@@ -156,27 +229,43 @@ fun RapatScreen(navController: NavHostController) {
             },
             onLogoutClick = {
                 isMenuVisible = false
-                // TODO: Handle logout
+                sessionManager.clearSession()
+                navController.navigate("login") {
+                    popUpTo("home") { inclusive = true }
+                }
             }
         )
     }
 }
 
 @Composable
-fun RapatListContent(navController: NavHostController, rapatList: List<RapatItem>, isSelesai: Boolean, onDeleteClick: (RapatItem) -> Unit) {
+fun RapatListContent(navController: NavHostController, rapatList: List<AgendaRapatData>, isSelesai: Boolean, onDeleteClick: (AgendaRapatData) -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(rapatList) { rapat ->
-                RapatCard(
-                    navController = navController,
-                    rapat = rapat,
-                    isSelesai = isSelesai,
-                    onDeleteClick = { onDeleteClick(rapat) }
+        if (rapatList.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (isSelesai) "Belum ada rapat yang selesai" else "Belum ada agenda rapat",
+                    color = TextSecondary,
+                    fontSize = 14.sp
                 )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(rapatList) { rapat ->
+                    RapatCard(
+                        navController = navController,
+                        rapat = rapat,
+                        isSelesai = isSelesai,
+                        onDeleteClick = { onDeleteClick(rapat) }
+                    )
+                }
             }
         }
     }
@@ -185,15 +274,62 @@ fun RapatListContent(navController: NavHostController, rapatList: List<RapatItem
 @Composable
 fun RapatCard(
     navController: NavHostController,
-    rapat: RapatItem,
+    rapat: AgendaRapatData,
     isSelesai: Boolean,
     onDeleteClick: () -> Unit = {}
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
+    // Cek apakah waktu rapat sudah lewat
+    val isExpired = remember(rapat) {
+        try {
+            val currentTime = Calendar.getInstance()
+            val endParts = rapat.endTimeDisplay.replace(" WIB", "").split(":")
+            val endHour = endParts[0].toInt()
+            val endMinute = endParts[1].toInt()
+
+            // Parse tanggal agenda
+            val agendaDateParts = rapat.dateDisplay.split(" ")
+            val day = agendaDateParts[0].toInt()
+            val monthName = agendaDateParts[1]
+            val year = agendaDateParts[2].toInt()
+
+            // Konversi nama bulan Indonesia ke angka
+            val monthNumber = when (monthName.lowercase()) {
+                "januari" -> Calendar.JANUARY
+                "februari" -> Calendar.FEBRUARY
+                "maret" -> Calendar.MARCH
+                "april" -> Calendar.APRIL
+                "mei" -> Calendar.MAY
+                "juni" -> Calendar.JUNE
+                "juli" -> Calendar.JULY
+                "agustus" -> Calendar.AUGUST
+                "september" -> Calendar.SEPTEMBER
+                "oktober" -> Calendar.OCTOBER
+                "november" -> Calendar.NOVEMBER
+                "desember" -> Calendar.DECEMBER
+                else -> currentTime.get(Calendar.MONTH)
+            }
+
+            val agendaEndTime = Calendar.getInstance().apply {
+                set(Calendar.YEAR, year)
+                set(Calendar.MONTH, monthNumber)
+                set(Calendar.DAY_OF_MONTH, day)
+                set(Calendar.HOUR_OF_DAY, endHour)
+                set(Calendar.MINUTE, endMinute)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+
+            currentTime.after(agendaEndTime)
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = rapat.cardColor),
+        colors = CardDefaults.cardColors(containerColor = CardGreen),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(1.dp)
     ) {
@@ -204,12 +340,40 @@ fun RapatCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = rapat.title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = rapat.title,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+
+                    // Status indicator
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        val (statusText, statusColor, statusIcon) = when {
+                            rapat.isDone -> Triple("Sudah Absen", PrimaryGreen, Icons.Default.CheckCircle)
+                            isExpired -> Triple("Waktu Habis", RedPrimary, Icons.Default.Schedule)
+                            else -> Triple("Belum Absen", YellowPrimary, Icons.Default.PendingActions)
+                        }
+
+                        Icon(
+                            imageVector = statusIcon,
+                            contentDescription = null,
+                            tint = statusColor,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = statusText,
+                            fontSize = 12.sp,
+                            color = statusColor,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
 
                 Box {
                     Icon(
@@ -231,7 +395,7 @@ fun RapatCard(
                             onClick = {
                                 showMenu = false
                                 navController.navigate(
-                                    "rapat_detail/${rapat.title}/${rapat.date}/${rapat.time}/${rapat.location}/${rapat.isDone}"
+                                    "rapat_detail/${rapat.idAgenda}/${rapat.title}/${rapat.dateDisplay}/${rapat.startTimeDisplay}/${rapat.endTimeDisplay}/${rapat.location}/${rapat.isDone}"
                                 )
                             },
                             leadingIcon = {
@@ -264,36 +428,59 @@ fun RapatCard(
             }
 
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Dibuat oleh: ${rapat.creator}", fontSize = 12.sp, color = TextSecondary)
+            Text("Dibuat oleh: ${rapat.creatorName}", fontSize = 12.sp, color = TextSecondary)
 
             Spacer(modifier = Modifier.height(8.dp))
-            RapatDetailRow(Icons.Default.CalendarToday, rapat.date, RedPrimary)
-            RapatDetailRow(Icons.Default.AccessTime, rapat.time, BluePrimary)
+            RapatDetailRow(Icons.Default.CalendarToday, rapat.dateDisplay, RedPrimary)
+            // Show start and end time together
+            RapatDetailRow(Icons.Default.AccessTime, "${rapat.startTimeDisplay} - ${rapat.endTimeDisplay}", BluePrimary)
             RapatDetailRow(Icons.Default.LocationOn, rapat.location, YellowPrimary)
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Button dengan logika yang disesuaikan
+            val (buttonText, buttonEnabled, buttonColor, buttonTextColor) = when {
+                rapat.isDone -> {
+                    Tuple4("Sudah Mengisi Absen", false, PrimaryGreen, Color.White)
+                }
+                isExpired -> {
+                    Tuple4("Waktu Absen Sudah Habis", false, Color.Gray, Color.White)
+                }
+                else -> {
+                    Tuple4("Isi Absensi Kehadiran", true, Color.White, PrimaryGreen)
+                }
+            }
+
             Button(
-                onClick = { navController.navigate(
-                    "rapat_detail/${rapat.title}/${rapat.date}/${rapat.time}/${rapat.location}/${rapat.isDone}"
-                )
+                onClick = {
+                    if (buttonEnabled) {
+                        navController.navigate(
+                            "rapat_detail/${rapat.idAgenda}/${rapat.title}/${rapat.dateDisplay}/${rapat.startTimeDisplay}/${rapat.endTimeDisplay}/${rapat.location}/${rapat.isDone}"
+                        )
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = buttonEnabled,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (rapat.isDone) PrimaryGreen else Color.White,
-                    contentColor = if (rapat.isDone) Color.White else PrimaryGreen
+                    containerColor = buttonColor,
+                    contentColor = buttonTextColor,
+                    disabledContainerColor = buttonColor.copy(alpha = 0.6f),
+                    disabledContentColor = buttonTextColor.copy(alpha = 0.6f)
                 ),
-                border = if (!rapat.isDone) BorderStroke(1.dp, PrimaryGreen) else null,
+                border = if (buttonEnabled && buttonColor == Color.White) BorderStroke(1.dp, PrimaryGreen) else null,
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
-                    text = if (rapat.isDone) "Anda sudah mengisi absen" else "Isi Absensi Kehadiran",
+                    text = buttonText,
                     fontWeight = FontWeight.Medium
                 )
             }
         }
     }
 }
+
+// Helper class untuk multiple return values
+data class Tuple4<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
 @Composable
 fun RapatDetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, tint: Color) {
@@ -451,24 +638,3 @@ fun DeleteConfirmationBottomSheet(
         }
     }
 }
-
-data class RapatItem(
-    val title: String,
-    val creator: String,
-    val date: String,
-    val time: String,
-    val location: String,
-    val isDone: Boolean,
-    val cardColor: Color
-)
-
-// Dummy Data
-fun getRapatBerlangsung(): List<RapatItem> = listOf(
-    RapatItem("Rapat Pleno 3", "Nagita Siwiya", "27 Oktober 2025", "14:00 WIB", "Ruang Rapat 2 Lt.3", false, CardGreen),
-    RapatItem("Rapat Evaluasi Bulanan", "Dodi Pranata", "29 Oktober 2025", "09:00 WIB", "Ruang Utama Kantor", false, CardGreen)
-)
-
-fun getRapatSelesai(): List<RapatItem> = listOf(
-    RapatItem("Rapat Pleno 2", "Refli Ahmad", "13 Juli 2025", "19:00 WIB", "Airo Cafe & Resto", true, CardGreen),
-    RapatItem("Rapat Pleno 1", "Nagita Siwiya", "11 April 2025", "13:45 WIB", "Seminar PKM", true, CardGreen)
-)
