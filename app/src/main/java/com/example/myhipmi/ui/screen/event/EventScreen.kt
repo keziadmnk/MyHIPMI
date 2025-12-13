@@ -42,6 +42,8 @@ import com.example.myhipmi.ui.components.MenuDrawer
 import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
 import com.example.myhipmi.ui.theme.*
 import kotlinx.coroutines.delay
+import com.example.myhipmi.utils.EventStatusHelper
+import com.example.myhipmi.utils.EventStatus
 
 @Composable
 fun EventScreen(navController: NavHostController) {
@@ -395,19 +397,40 @@ fun EventCard(
             }
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
-            // Judul & Tombol Menu
+            // Judul & Status Badge & Tombol Menu
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = event.namaEvent,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp,
-                    color = Color(0xFF1F2937),
-                    modifier = Modifier.weight(1f)
-                )
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = event.namaEvent,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        color = Color(0xFF1F2937)
+                    )
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    // STATUS BADGE
+                    val eventStatus = EventStatusHelper.getEventStatus(event.tanggal, event.waktu)
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(EventStatusHelper.getStatusColor(eventStatus)).copy(alpha = 0.15f)
+                    ) {
+                        Text(
+                            text = EventStatusHelper.getStatusText(eventStatus),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(EventStatusHelper.getStatusColor(eventStatus)),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                }
 
                 // Tombol titik tiga
                 Box {

@@ -29,6 +29,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import com.example.myhipmi.data.remote.retrofit.ApiConfig
+import com.example.myhipmi.utils.EventStatusHelper
+import com.example.myhipmi.utils.EventStatus
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import com.example.myhipmi.data.remote.response.NotificationItem
 
 data class NavItem(val route: String, val index: Int)
 
@@ -52,6 +62,52 @@ fun HomeScreen(
     onLogout: () -> Unit = {}
 ) {
     var isMenuVisible by remember { mutableStateOf(false) }
+    var activeEventCount by remember { mutableStateOf(0) }
+    var recentNotifications by remember { mutableStateOf<List<NotificationItem>>(emptyList()) }
+    var refreshTrigger by remember { mutableStateOf(0) }
+    val scope = rememberCoroutineScope()
+    
+    // Detect when returning to home screen
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    
+    // Trigger refresh when coming back to home
+    LaunchedEffect(currentRoute) {
+        if (currentRoute == "home") {
+            refreshTrigger++
+        }
+    }
+    
+    // Fetch active event count and recent notifications
+    LaunchedEffect(refreshTrigger) {
+        android.util.Log.d("HomeScreen", "📱 Fetching data... trigger=$refreshTrigger")
+        scope.launch {
+            try {
+                // Fetch events
+                val eventsResponse = ApiConfig.getApiService().getEvents()
+                if (eventsResponse.isSuccessful) {
+                    val events = eventsResponse.body()?.events ?: emptyList()
+                    android.util.Log.d("HomeScreen", "✅ Events fetched: ${events.size} events")
+                    // Hitung event yang Ongoing atau Upcoming
+                    activeEventCount = events.count { event ->
+                        val status = EventStatusHelper.getEventStatus(event.tanggal, event.waktu)
+                        status == EventStatus.ONGOING || status == EventStatus.UPCOMING
+                    }
+                    android.util.Log.d("HomeScreen", "🔢 Active events: $activeEventCount")
+                }
+                
+                // Fetch notifications (latest 3)
+                val notifResponse = ApiConfig.getApiService().getNotifications()
+                if (notifResponse.isSuccessful) {
+                    val allNotifs = notifResponse.body()?.notifications ?: emptyList()
+                    recentNotifications = allNotifs.take(3)
+                    android.util.Log.d("HomeScreen", "🔔 Notifications fetched: ${allNotifs.size} total, showing ${recentNotifications.size}")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("HomeScreen", "❌ Error fetching data: ${e.message}")
+            }
+        }
+    }
     val gradientBrush = Brush.verticalGradient(
         colors = listOf(
             Color(0xFFE3ECDA),
@@ -95,8 +151,15 @@ fun HomeScreen(
                         fontSize = 24.sp
                     )
                     Spacer(Modifier.height(4.dp))
+                    val currentDate = remember {
+                        val calendar = Calendar.getInstance()
+                        val dayNames = arrayOf("Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu")
+                        val dayName = dayNames[calendar.get(Calendar.DAY_OF_WEEK) - 1]
+                        val dateFormat = SimpleDateFormat("dd MMMM yyyy", Locale("id", "ID"))
+                        "$dayName, ${dateFormat.format(calendar.time)}"
+                    }
                     Text(
-                        "Senin, 13 Oktober 2025",
+                        currentDate,
                         color = Color(0xFF6B7280),
                         fontSize = 14.sp
                     )
@@ -106,7 +169,11 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Box {
+                    Box(
+                        modifier = Modifier.clickable { 
+                            navController.navigate("notifications") 
+                        }
+                    ) {
                         Icon(
                             Icons.Default.Notifications,
                             contentDescription = "notif",
@@ -149,7 +216,7 @@ fun HomeScreen(
                 )
                 SummaryCard(
                     title = "Event Aktif",
-                    value = "2 Event",
+                    value = "$activeEventCount Event",
                     icon = Icons.Default.Campaign,
                     bgColor = Color(0xFFF5E8A0),
                     iconBgColor = Color(0xFFEDD97A),
@@ -193,50 +260,27 @@ fun HomeScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // Activity items
-            ActivityItem(
-                text = "Waktunya bayar kas!",
-                time = "3 minutes",
-                icon = Icons.Default.AccountBalanceWallet,
-                bgColor = Color(0xFFFFFFFF),
-                iconBgColor = Color(0xFFB8E3BA)
-            )
-            Spacer(Modifier.height(12.dp))
-
-            ActivityItem(
-                text = "Event baru telah ditambahkan!",
-                time = "1 hour",
-                icon = Icons.Default.Campaign,
-                bgColor = Color(0xFFFFFFFF),
-                iconBgColor = Color(0xFFF1EAAA)
-            )
-            Spacer(Modifier.height(12.dp))
-
-            ActivityItem(
-                text = "Jadwal piket hari ini!",
-                time = "2 days",
-                icon = Icons.Default.EventNote,
-                bgColor = Color(0xFFFFFFFF),
-                iconBgColor = Color(0xFFF5C0C0)
-            )
-            Spacer(Modifier.height(12.dp))
-
-            ActivityItem(
-                text = "Waktunya bayar kas!",
-                time = "2 days",
-                icon = Icons.Default.CalendarToday,
-                bgColor = Color(0xFFFFFFFF),
-                iconBgColor = Color(0xFFC7D9F5)
-            )
-            Spacer(Modifier.height(12.dp))
-
-            ActivityItem(
-                text = "Agenda rapat baru!",
-                time = "9 days",
-                icon = Icons.Default.EventNote,
-                bgColor = Color(0xFFFFFFFF),
-                iconBgColor = Color(0xFFF5C0C0)
-            )
+            // Activity items - dari notifikasi API
+            if (recentNotifications.isEmpty()) {
+                ActivityItem(
+                    text = "Belum ada notifikasi terbaru",
+                    time = "baru saja",
+                    icon = Icons.Default.Campaign,
+                    bgColor = Color(0xFFFFFFFF),
+                    iconBgColor = Color(0xFFF5E8A0)
+                )
+            } else {
+                recentNotifications.forEach { notification ->
+                    ActivityItem(
+                        text = "Event Baru Telah Ditambahkan!",
+                        time = formatNotificationTime(notification.created_at),
+                        icon = Icons.Default.Campaign,
+                        bgColor = Color(0xFFFFFFFF),
+                        iconBgColor = Color(0xFFF5E8A0)
+                    )
+                    Spacer(Modifier.height(12.dp))
+                }
+            }
         }
     }
     MenuDrawer(
@@ -309,6 +353,37 @@ fun SummaryCard(
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp
         )
+    }
+}
+
+// Helper function untuk format waktu notifikasi
+fun formatNotificationTime(dateString: String): String {
+    return try {
+        val parts = dateString.split("T")
+        if (parts.size == 2) {
+            val timePart = parts[1].split(".")[0]
+            val timeComponents = timePart.split(":")
+            val hour = timeComponents[0].toInt()
+            val minute = timeComponents[1].toInt()
+            
+            // Hitung selisih waktu
+            val notifTime = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, hour)
+                set(Calendar.MINUTE, minute)
+            }
+            val now = Calendar.getInstance()
+            val diffInMinutes = (now.timeInMillis - notifTime.timeInMillis) / (1000 * 60)
+            
+            when {
+                diffInMinutes < 60 -> "${diffInMinutes.toInt()} menit"
+                diffInMinutes < 1440 -> "${(diffInMinutes / 60).toInt()} jam"
+                else -> "${(diffInMinutes / 1440).toInt()} hari"
+            }
+        } else {
+            "baru saja"
+        }
+    } catch (e: Exception) {
+        "baru saja"
     }
 }
 

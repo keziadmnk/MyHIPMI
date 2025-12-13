@@ -104,15 +104,35 @@ fun AddEventScreen(navController: NavHostController) {
                     { _, year, month, dayOfMonth ->
                         val selectedCalendar = Calendar.getInstance()
                         selectedCalendar.set(year, month, dayOfMonth)
-                        tanggal = SimpleDateFormat(
-                            "yyyy-MM-dd",
-                            Locale.getDefault()
-                        ).format(selectedCalendar.time)
+                        
+                        // Validasi: Cek apakah tanggal di masa lalu
+                        val today = Calendar.getInstance()
+                        today.set(Calendar.HOUR_OF_DAY, 0)
+                        today.set(Calendar.MINUTE, 0)
+                        today.set(Calendar.SECOND, 0)
+                        today.set(Calendar.MILLISECOND, 0)
+                        
+                        selectedCalendar.set(Calendar.HOUR_OF_DAY, 0)
+                        selectedCalendar.set(Calendar.MINUTE, 0)
+                        selectedCalendar.set(Calendar.SECOND, 0)
+                        selectedCalendar.set(Calendar.MILLISECOND, 0)
+                        
+                        if (selectedCalendar.before(today)) {
+                            Toast.makeText(context, "Tanggal event tidak boleh di masa lalu", Toast.LENGTH_SHORT).show()
+                        } else {
+                            tanggal = SimpleDateFormat(
+                                "yyyy-MM-dd",
+                                Locale.getDefault()
+                            ).format(selectedCalendar.time)
+                        }
                     },
                     calendar.get(Calendar.YEAR),
                     calendar.get(Calendar.MONTH),
                     calendar.get(Calendar.DAY_OF_MONTH)
-                )
+                ).apply {
+                    // Set minimum date to today
+                    datePicker.minDate = System.currentTimeMillis()
+                }
             }
 
             val timePickerDialog = remember {
@@ -243,7 +263,8 @@ fun AddEventScreen(navController: NavHostController) {
                                 label = "Nama Event",
                                 value = namaEvent,
                                 onValueChange = { namaEvent = it },
-                                icon = Icons.Default.Event
+                                icon = Icons.Default.Event,
+                                isRequired = true
                             )
                             ModernTextField(
                                 label = "Tanggal",
@@ -251,7 +272,8 @@ fun AddEventScreen(navController: NavHostController) {
                                 onValueChange = { },
                                 icon = Icons.Default.CalendarMonth,
                                 readOnly = true,
-                                onClick = { datePickerDialog.show() }
+                                onClick = { datePickerDialog.show() },
+                                isRequired = true
                             )
                             ModernTextField(
                                 label = "Waktu",
@@ -259,31 +281,36 @@ fun AddEventScreen(navController: NavHostController) {
                                 onValueChange = { },
                                 icon = Icons.Default.AccessTime,
                                 readOnly = true,
-                                onClick = { timePickerDialog.show() }
+                                onClick = { timePickerDialog.show() },
+                                isRequired = true
                             )
                             ModernTextField(
                                 label = "Tempat",
                                 value = tempat,
                                 onValueChange = { tempat = it },
-                                icon = Icons.Default.LocationOn
+                                icon = Icons.Default.LocationOn,
+                                isRequired = true
                             )
                             ModernTextField(
                                 label = "Dresscode",
                                 value = dresscode,
                                 onValueChange = { dresscode = it },
-                                icon = Icons.Default.Checkroom
+                                icon = Icons.Default.Checkroom,
+                                isRequired = true
                             )
                             ModernTextField(
                                 label = "Penyelenggara",
                                 value = penyelenggara,
                                 onValueChange = { penyelenggara = it },
-                                icon = Icons.Default.Person
+                                icon = Icons.Default.Person,
+                                isRequired = true
                             )
                             ModernTextField(
                                 label = "Contact Person",
                                 value = contactPerson,
                                 onValueChange = { contactPerson = it },
-                                icon = Icons.Default.Phone
+                                icon = Icons.Default.Phone,
+                                isRequired = true
                             )
                             ModernTextField(
                                 label = "Deskripsi",
@@ -353,8 +380,9 @@ fun AddEventScreen(navController: NavHostController) {
                                     android.util.Log.d("AddEventScreen", "Validating inputs...")
                                     android.util.Log.d("AddEventScreen", "namaEvent: '$namaEvent', tanggal: '$tanggal', waktu: '$waktu', tempat: '$tempat', penyelenggara: '$penyelenggara'")
                                     
-                                    if (namaEvent.isBlank() || tanggal.isBlank() || waktu.isBlank() || tempat.isBlank() || penyelenggara.isBlank()) {
-                                        errorMessage = "Nama event, tanggal, waktu, tempat, dan penyelenggara wajib diisi"
+                                    if (namaEvent.isBlank() || tanggal.isBlank() || waktu.isBlank() || tempat.isBlank() || 
+                                        dresscode.isBlank() || penyelenggara.isBlank() || contactPerson.isBlank()) {
+                                        errorMessage = "Semua field wajib diisi kecuali deskripsi"
                                         android.util.Log.d("AddEventScreen", "Validation failed: missing required fields")
                                         return@Button
                                     }
@@ -617,20 +645,32 @@ fun AddEventScreen(navController: NavHostController) {
             singleLine: Boolean = true,
             minLines: Int = 1,
             readOnly: Boolean = false,
-            onClick: (() -> Unit)? = null
+            onClick: (() -> Unit)? = null,
+            isRequired: Boolean = false
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 6.dp)
             ) {
-                Text(
-                    text = label,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF374151),
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+                Row {
+                    Text(
+                        text = label,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF374151),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    if (isRequired) {
+                        Text(
+                            text = " *",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.Red,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                }
 
 
                 if (onClick != null) {

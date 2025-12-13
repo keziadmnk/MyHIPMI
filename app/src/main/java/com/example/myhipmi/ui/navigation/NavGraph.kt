@@ -22,6 +22,7 @@ import com.example.myhipmi.ui.screen.piket.PiketScreen
 import com.example.myhipmi.ui.screen.rapat.AddRapatScreen
 import com.example.myhipmi.ui.screen.rapat.RapatDetailScreen
 import com.example.myhipmi.ui.screen.rapat.RapatScreen
+import com.example.myhipmi.ui.screen.notification.NotificationScreen
 
 
 @Composable
@@ -118,6 +119,11 @@ fun NavGraph(navController: NavHostController) {
         ) { backStackEntry ->
             val eventId = backStackEntry.arguments?.getInt("eventId") ?: 0
             EditEventScreen(navController = navController, eventId = eventId) // <--- Rute Edit Baru
+        }
+        
+        // === Notification Screen ===
+        composable("notifications") {
+            NotificationScreen(navController = navController)
         }
     }
 }

@@ -98,4 +98,9 @@ interface ApiService {
     suspend fun getAbsenByAgenda(
         @Path("id_agenda") idAgenda: Int
     ): Response<AbsenListResponse>
+
+    // ========== NOTIFICATION ENDPOINTS ==========
+
+    @GET("notifications")
+    suspend fun getNotifications(): Response<NotificationResponse>
 }

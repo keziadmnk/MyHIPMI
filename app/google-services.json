@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "671041820968",
+    "project_id": "myhipmi",
+    "storage_bucket": "myhipmi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:671041820968:android:a81c157dd5ef8cce93981d",
+        "android_client_info": {
+          "package_name": "com.example.myhipmi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0h_imgoxT6ciZuiAue90_8PC11ATGMEY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

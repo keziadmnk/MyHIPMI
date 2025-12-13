@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -68,5 +69,11 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    
+    // Firebase BOM
+    implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
+    
+    // Firebase Cloud Messaging (NOTIFIKASI)
+    implementation("com.google.firebase:firebase-messaging")
 
 }
