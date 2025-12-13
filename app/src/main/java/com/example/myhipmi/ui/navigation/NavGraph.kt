@@ -20,6 +20,7 @@ import com.example.myhipmi.ui.screen.menu.ProfileScreen
 import com.example.myhipmi.ui.screen.piket.DetailPiketScreen
 import com.example.myhipmi.ui.screen.piket.PiketScreen
 import com.example.myhipmi.ui.screen.rapat.AddRapatScreen
+import com.example.myhipmi.ui.screen.rapat.EditRapatScreen
 import com.example.myhipmi.ui.screen.rapat.RapatDetailScreen
 import com.example.myhipmi.ui.screen.rapat.RapatScreen
 import com.example.myhipmi.ui.screen.notification.NotificationScreen
@@ -96,6 +97,17 @@ fun NavGraph(navController: NavHostController) {
             )
         ) { backStackEntry: NavBackStackEntry ->
             RapatDetailScreen(navController, backStackEntry)
+        }
+        
+        // === Edit Rapat ===
+        composable(
+            route = "edit_rapat/{idAgenda}",
+            arguments = listOf(
+                navArgument("idAgenda") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val idAgenda = backStackEntry.arguments?.getInt("idAgenda") ?: 0
+            EditRapatScreen(navController = navController, idAgenda = idAgenda)
         }
 
         // === Detail Event ===

@@ -406,7 +406,10 @@ fun RapatCard(
                         if (!isSelesai) {
                             DropdownMenuItem(
                                 text = { Text("Edit") },
-                                onClick = { showMenu = false },
+                                onClick = { 
+                                    showMenu = false
+                                    navController.navigate("edit_rapat/${rapat.idAgenda}")
+                                },
                                 leadingIcon = {
                                     Icon(Icons.Default.Edit, contentDescription = null, tint = BluePrimary)
                                 }
