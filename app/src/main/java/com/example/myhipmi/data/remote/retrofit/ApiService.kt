@@ -40,6 +40,27 @@ interface ApiService {
         @Path("id") id: Int
     ): Response<EventResponse>
 
+    @GET("events/{id}")
+    suspend fun getEventById(
+        @Path("id") id: Int
+    ): Response<EventDetailResponse>
+
+    @Multipart
+    @PUT("events/{id}")
+    suspend fun updateEvent(
+        @Path("id") id: Int,
+        @Part("id_pengurus") idPengurus: RequestBody,
+        @Part("nama_event") namaEvent: RequestBody,
+        @Part("tanggal") tanggal: RequestBody,
+        @Part("waktu") waktu: RequestBody,
+        @Part("tempat") tempat: RequestBody,
+        @Part("penyelenggara") penyelenggara: RequestBody,
+        @Part("dresscode") dresscode: RequestBody?,
+        @Part("contact_person") contactPerson: RequestBody?,
+        @Part("deskripsi") deskripsi: RequestBody?,
+        @Part poster: MultipartBody.Part?
+    ): Response<EventResponse>
+
     // ========== AGENDA RAPAT ENDPOINTS ==========
 
     @GET("agenda")

@@ -23,3 +23,9 @@ data class EventData(
     @SerializedName("created_at")
     val createdAt: String? = null
 )
+
+data class EventDetailResponse(
+    val message: String,
+    val event: EventItemResponse?
+)
+

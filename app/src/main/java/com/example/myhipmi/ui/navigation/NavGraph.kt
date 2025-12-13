@@ -9,6 +9,8 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.myhipmi.ui.screen.kas.KasScreen
 import com.example.myhipmi.ui.screen.event.AddEventScreen
+import com.example.myhipmi.ui.screen.event.DetailEventScreen
+import com.example.myhipmi.ui.screen.event.EditEventScreen
 import com.example.myhipmi.ui.screen.event.EventScreen
 import com.example.myhipmi.ui.screen.home.HomeScreen
 import com.example.myhipmi.ui.screen.landing.LandingPage
@@ -20,7 +22,7 @@ import com.example.myhipmi.ui.screen.piket.PiketScreen
 import com.example.myhipmi.ui.screen.rapat.AddRapatScreen
 import com.example.myhipmi.ui.screen.rapat.RapatDetailScreen
 import com.example.myhipmi.ui.screen.rapat.RapatScreen
-import com.example.myhipmi.ui.screens.DetailEventScreen
+
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -96,8 +98,26 @@ fun NavGraph(navController: NavHostController) {
         }
 
         // === Detail Event ===
-        composable("detail_event") {
-            DetailEventScreen(navController = navController)
+        composable(
+            "detail_event/{eventId}",
+            arguments = listOf(
+                navArgument("eventId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            // Ambil ID Event dari argumen, default ke 0 jika tidak ada (untuk keamanan)
+            val eventId = backStackEntry.arguments?.getInt("eventId") ?: 0
+
+            // Panggil DetailEventScreen dan kirimkan eventId
+            DetailEventScreen(navController = navController, eventId = eventId)
+        }
+        composable(
+            route = "edit_event/{eventId}",
+            arguments = listOf(
+                navArgument("eventId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val eventId = backStackEntry.arguments?.getInt("eventId") ?: 0
+            EditEventScreen(navController = navController, eventId = eventId) // <--- Rute Edit Baru
         }
     }
 }

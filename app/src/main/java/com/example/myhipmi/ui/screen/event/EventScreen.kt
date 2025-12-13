@@ -390,6 +390,9 @@ fun EventCard(
                 scaleX = scale
                 scaleY = scale
             }
+            .clickable {
+                navController.navigate("detail_event/${event.idEvent}")
+            }
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             // Judul & Tombol Menu
@@ -423,21 +426,12 @@ fun EventCard(
                         onDismissRequest = { showMenu = false },
                         modifier = Modifier.background(Color.White)
                     ) {
-                        DropdownMenuItem(
-                            text = { Text("Detail") },
-                            onClick = {
-                                showMenu = false
-                                // TODO: Navigate dengan event ID
-                                navController.navigate("detail_event")
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.Info, contentDescription = null, tint = GreenPrimary)
-                            }
-                        )
+
                         DropdownMenuItem(
                             text = { Text("Edit") },
                             onClick = {
                                 showMenu = false
+                                navController.navigate("edit_event/${event.idEvent}") // <--- Menuju layar edit
                             },
                             leadingIcon = {
                                 Icon(Icons.Default.Edit, contentDescription = null, tint = BluePrimary)
