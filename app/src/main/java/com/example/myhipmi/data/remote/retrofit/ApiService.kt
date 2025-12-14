@@ -103,4 +103,33 @@ interface ApiService {
 
     @GET("notifications")
     suspend fun getNotifications(): Response<NotificationResponse>
+
+    @POST("notifications/piket")
+    suspend fun createPiketNotification(
+        @Body request: CreatePiketNotificationRequest
+    ): Response<CreatePiketNotificationResponse>
+
+    // ========== ABSEN PIKET ENDPOINTS ==========
+
+    @POST("piket/absen")
+    suspend fun createAbsenPiket(
+        @Body request: CreateAbsenPiketRequest
+    ): Response<AbsenPiketResponse>
+
+    @GET("piket/absen/pengurus/{id_pengurus}")
+    suspend fun getAbsenPiketByPengurus(
+        @Path("id_pengurus") idPengurus: Int
+    ): Response<AbsenPiketListResponse>
+
+    @GET("piket/absen/{id_absen_piket}")
+    suspend fun getAbsenPiketById(
+        @Path("id_absen_piket") idAbsenPiket: Int
+    ): Response<AbsenPiketResponse>
+
+    // ========== PENGURUS ENDPOINTS ==========
+
+    @GET("pengurus/{id_pengurus}")
+    suspend fun getPengurusById(
+        @Path("id_pengurus") idPengurus: Int
+    ): Response<PengurusResponse>
 }

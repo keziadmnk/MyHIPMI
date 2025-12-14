@@ -75,5 +75,9 @@ dependencies {
     
     // Firebase Cloud Messaging (NOTIFIKASI)
     implementation("com.google.firebase:firebase-messaging")
+    
+    // WorkManager untuk scheduled notification
+    val workVersion = "2.9.0"
+    implementation("androidx.work:work-runtime-ktx:$workVersion")
 
 }

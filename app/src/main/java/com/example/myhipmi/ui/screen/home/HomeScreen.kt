@@ -39,6 +39,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import com.example.myhipmi.data.remote.response.NotificationItem
+import com.example.myhipmi.data.local.UserSessionManager
+import androidx.compose.ui.platform.LocalContext
 
 data class NavItem(val route: String, val index: Int)
 
@@ -67,6 +69,13 @@ fun HomeScreen(
     var refreshTrigger by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
     
+    // State untuk hari piket pengurus
+    val context = LocalContext.current
+    val sessionManager = remember { UserSessionManager(context) }
+    val loggedInUserId = sessionManager.getIdPengurus()
+    var hariPiket by remember { mutableStateOf<String?>(null) }
+    var isLoadingHariPiket by remember { mutableStateOf(true) }
+    
     // Detect when returning to home screen
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -75,6 +84,32 @@ fun HomeScreen(
     LaunchedEffect(currentRoute) {
         if (currentRoute == "home") {
             refreshTrigger++
+        }
+    }
+    
+    // Fetch hari piket pengurus
+    LaunchedEffect(loggedInUserId, refreshTrigger) {
+        if (loggedInUserId != null) {
+            isLoadingHariPiket = true
+            scope.launch {
+                try {
+                    val response = ApiConfig.getApiService().getPengurusById(loggedInUserId)
+                    if (response.isSuccessful && response.body()?.success == true) {
+                        val pengurus = response.body()?.data
+                        hariPiket = pengurus?.jadwal?.hariPiket ?: "Belum ditentukan"
+                    } else {
+                        hariPiket = "Belum ditentukan"
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("HomeScreen", "❌ Error fetching piket schedule: ${e.message}")
+                    hariPiket = "Belum ditentukan"
+                } finally {
+                    isLoadingHariPiket = false
+                }
+            }
+        } else {
+            hariPiket = "Belum ditentukan"
+            isLoadingHariPiket = false
         }
     }
     
@@ -232,7 +267,7 @@ fun HomeScreen(
             ) {
                 SummaryCard(
                     title = "Jadwal Piket",
-                    value = "Senin",
+                    value = if (isLoadingHariPiket) "Memuat..." else (hariPiket ?: "Belum ditentukan"),
                     icon = Icons.Default.CalendarToday,
                     bgColor = Color(0xFF4A5D23),
                     iconBgColor = Color(0xFF3A4D13),

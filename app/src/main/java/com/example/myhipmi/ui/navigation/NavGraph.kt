@@ -18,6 +18,7 @@ import com.example.myhipmi.ui.screen.login.LoginPage
 import com.example.myhipmi.ui.screen.menu.AboutScreen
 import com.example.myhipmi.ui.screen.menu.ProfileScreen
 import com.example.myhipmi.ui.screen.piket.DetailPiketScreen
+import com.example.myhipmi.ui.screen.piket.DetailRiwayatPiketScreen
 import com.example.myhipmi.ui.screen.piket.PiketScreen
 import com.example.myhipmi.ui.screen.rapat.AddRapatScreen
 import com.example.myhipmi.ui.screen.rapat.EditRapatScreen
@@ -69,6 +70,15 @@ fun NavGraph(navController: NavHostController) {
         composable("rapat") { RapatScreen(navController) }
         composable("piket") { PiketScreen(navController) }
         composable("piket/upload") { DetailPiketScreen(navController) }
+        composable(
+            route = "piket/detail/{idAbsenPiket}",
+            arguments = listOf(
+                navArgument("idAbsenPiket") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val idAbsenPiket = backStackEntry.arguments?.getInt("idAbsenPiket") ?: 0
+            DetailRiwayatPiketScreen(navController = navController, idAbsenPiket = idAbsenPiket)
+        }
         composable("event") { EventScreen(navController) }
 
         // === Add screens ===
