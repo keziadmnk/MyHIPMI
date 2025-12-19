@@ -60,7 +60,7 @@ fun PiketScreen(navController: NavHostController) {
                     val response = apiService.getPengurusById(loggedInUserId)
                     if (response.isSuccessful && response.body()?.success == true) {
                         val pengurus = response.body()?.data
-                        hariPiket = pengurus?.jadwal?.hariPiket
+                        hariPiket = pengurus?.jadwalPiket?.hariPiket
                     } else {
                         snackbarHostState.showSnackbar("Gagal memuat data pengurus")
                     }
@@ -145,7 +145,8 @@ fun PiketScreen(navController: NavHostController) {
                 MyHipmiTopBar(
                     title = "Jadwal Piket",
                     onBackClick = { navController.popBackStack() },
-                    onMenuClick = { isMenuVisible = true }
+                    onMenuClick = { isMenuVisible = true },
+                    onNotificationClick = { navController.navigate("notifications") }
                 )
             },
             bottomBar = {

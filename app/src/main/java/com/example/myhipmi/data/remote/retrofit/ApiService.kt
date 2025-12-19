@@ -2,6 +2,7 @@ package com.example.myhipmi.data.remote.retrofit
 
 import com.example.myhipmi.data.remote.request.EventRequest
 import com.example.myhipmi.data.remote.request.LoginRequest
+import com.example.myhipmi.data.remote.request.UpdatePengurusRequest
 import com.example.myhipmi.data.remote.response.*
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -131,5 +132,11 @@ interface ApiService {
     @GET("pengurus/{id_pengurus}")
     suspend fun getPengurusById(
         @Path("id_pengurus") idPengurus: Int
+    ): Response<PengurusResponse>
+
+    @PUT("pengurus/{id_pengurus}")
+    suspend fun updatePengurus(
+        @Path("id_pengurus") idPengurus: Int,
+        @Body request: UpdatePengurusRequest
     ): Response<PengurusResponse>
 }

@@ -55,6 +55,12 @@ fun NotificationScreen(navController: NavHostController) {
                 val response = apiService.getNotifications()
                 if (response.isSuccessful) {
                     val notifications = response.body()?.notifications ?: emptyList()
+                    
+                    // Debug: Log first notification timestamp
+                    if (notifications.isNotEmpty()) {
+                        android.util.Log.d("NotificationScreen", "First notification created_at: ${notifications[0].created_at}")
+                    }
+                    
                     allNotifications = notifications.map { 
                         UnifiedNotificationItem(
                             id = it.id_notification,
@@ -353,22 +359,75 @@ fun NotificationCard(notification: NotificationItem) {
     }
 }
 
+
 fun formatTime(dateString: String): String {
+    android.util.Log.d("NotificationScreen", "📅 formatTime input: $dateString")
+    
     return try {
-        // Hitung selisih waktu (contoh: "3 minutes", "2 hours", dll)
+        // Coba berbagai format yang mungkin dari backend
+        val formats = listOf(
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",  // ISO 8601 dengan milliseconds dan Z
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",       // ISO 8601 tanpa milliseconds dengan Z
+            "yyyy-MM-dd'T'HH:mm:ss.SSS",      // ISO 8601 dengan milliseconds tanpa Z
+            "yyyy-MM-dd'T'HH:mm:ss",          // ISO 8601 tanpa milliseconds tanpa Z
+            "yyyy-MM-dd HH:mm:ss"             // Format alternative
+        )
+        
+        var date: Date? = null
+        var usedFormat = ""
+        
+        for (formatPattern in formats) {
+            try {
+                val inputFormat = SimpleDateFormat(formatPattern, Locale.getDefault())
+                inputFormat.timeZone = TimeZone.getTimeZone("Asia/Jakarta")
+                date = inputFormat.parse(dateString)
+                if (date != null) {
+                    usedFormat = formatPattern
+                    break
+                }
+            } catch (e: Exception) {
+                // Try next format
+                continue
+            }
+        }
+        
+        if (date != null) {
+            // Format output hanya jam dan menit (contoh: "07:29")
+            val outputFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+            outputFormat.timeZone = TimeZone.getTimeZone("Asia/Jakarta")
+            val result = outputFormat.format(date)
+            android.util.Log.d("NotificationScreen", "✅ formatTime output: $result (using format: $usedFormat)")
+            result
+        } else {
+            android.util.Log.w("NotificationScreen", "⚠️ formatTime failed to parse, trying fallback")
+            // Fallback: parsing manual
+            fallbackParseTime(dateString)
+        }
+    } catch (e: Exception) {
+        android.util.Log.e("NotificationScreen", "❌ formatTime error: ${e.message}")
+        fallbackParseTime(dateString)
+    }
+}
+
+// Fallback parsing jika SimpleDateFormat gagal
+private fun fallbackParseTime(dateString: String): String {
+    return try {
         val parts = dateString.split("T")
-         if (parts.size == 2) {
+        if (parts.size == 2) {
             val timePart = parts[1].split(".")[0]
             val timeComponents = timePart.split(":")
-            val hour = timeComponents[0]
-            val minute = timeComponents[1]
-            
-            // Simplified - just show time
-            "$hour:$minute"
+            if (timeComponents.size >= 2) {
+                val hour = timeComponents[0].padStart(2, '0')
+                val minute = timeComponents[1].padStart(2, '0')
+                "$hour:$minute"
+            } else {
+                "baru saja"
+            }
         } else {
             "baru saja"
         }
-    } catch (e: Exception) {
+    } catch (ex: Exception) {
         "baru saja"
     }
 }
+

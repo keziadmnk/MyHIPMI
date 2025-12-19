@@ -32,6 +32,16 @@ class MainActivity : ComponentActivity() {
                 Log.d("FCM", msg)
             }
         
+        // Subscribe ke topic 'agenda_rapat' untuk menerima notifikasi agenda rapat
+        FirebaseMessaging.getInstance().subscribeToTopic("agenda_rapat")
+            .addOnCompleteListener { task ->
+                var msg = "Subscribed to agenda_rapat topic"
+                if (!task.isSuccessful) {
+                    msg = "Failed to subscribe to agenda_rapat topic"
+                }
+                Log.d("FCM", msg)
+            }
+        
         // Setup notification channel untuk piket
         PiketNotificationHelper.createNotificationChannel(this)
         

@@ -93,7 +93,8 @@ fun KasScreen(
                 MyHipmiTopBar(
                     title = "Kas",
                     onBackClick = { (navController as NavHostController).popBackStack() },
-                    onMenuClick = { isMenuVisible = true }
+                    onMenuClick = { isMenuVisible = true },
+                    onNotificationClick = { (navController as NavHostController).navigate("notifications") }
                 )
             },
         bottomBar = {

@@ -25,11 +25,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         // Get title and body from notification OR data
         val title = remoteMessage.notification?.title 
                     ?: remoteMessage.data["title"] 
-                    ?: "Event Baru Ditambahkan!"
+                    ?: "Notifikasi Baru!"
         
         val body = remoteMessage.notification?.body 
                    ?: remoteMessage.data["body"] 
-                   ?: "Ada event baru"
+                   ?: "Ada notifikasi baru untuk Anda"
         
         Log.d(TAG, "🔔 Preparing notification - Title: $title, Body: $body")
         
@@ -50,20 +50,20 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notificationId = System.currentTimeMillis().toInt()
-
+        
         // Buat Channel untuk Android O ke atas
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Event Notifications",
+                "MyHIPMI Important Notifications",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Notifikasi untuk event baru"
+                description = "Notifikasi penting untuk event dan agenda rapat"
                 enableVibration(true)
                 enableLights(true)
             }
             notificationManager.createNotificationChannel(channel)
-            Log.d(TAG, "✅ Notification channel created")
+            Log.d(TAG, "✅ Notification channel created: $CHANNEL_ID")
         }
 
         // Intent untuk membuka aplikasi ketika notifikasi diklik
@@ -77,15 +77,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Buat notifikasi
+        // Buat notifikasi - SIMPLE configuration seperti piket
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(message)
-            .setSmallIcon(android.R.drawable.ic_dialog_info) // Use system icon to ensure it works
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setDefaults(NotificationCompat.DEFAULT_SOUND) // Only sound, no flash
+            .setPriority(NotificationCompat.PRIORITY_HIGH) // HIGH bukan MAX
+            .setDefaults(NotificationCompat.DEFAULT_ALL) // Ini yang penting! DEFAULT_ALL untuk sound
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
 
@@ -95,6 +95,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     companion object {
         private const val TAG = "FCMService"
-        private const val CHANNEL_ID = "event_notifications"
+        private const val CHANNEL_ID = "myhipmi_important_notifications" // GANTI CHANNEL ID BARU!
     }
 }

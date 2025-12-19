@@ -23,15 +23,60 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.myhipmi.ui.components.MenuDrawer
 import com.example.myhipmi.ui.components.MyHipmiTopBar
+import com.example.myhipmi.data.local.UserSessionManager
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(navController: NavController) {
     var isMenuVisible by remember { mutableStateOf(false) }
-    var nama by remember { mutableStateOf("Nagita Slavina") }
-    var jabatan by remember { mutableStateOf("Sekretaris Umum") }
-    var jadwalPiket by remember { mutableStateOf("Senin") }
+    
+    // Get user session
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sessionManager = remember { UserSessionManager(context) }
+    val loggedInUserId = sessionManager.getIdPengurus()
+    
+    // State untuk data user
+    var nama by remember { mutableStateOf("") }
+    var jabatan by remember { mutableStateOf("") }
+    var jadwalPiket by remember { mutableStateOf("") }
     var nomorHP by remember { mutableStateOf("") }
     var alamat by remember { mutableStateOf("") }
+    
+    // State untuk loading dan error
+    var isLoading by remember { mutableStateOf(true) }
+    var isUpdating by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    
+    val apiService = remember { com.example.myhipmi.data.remote.retrofit.ApiConfig.getApiService() }
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Load data pengurus saat pertama kali
+    LaunchedEffect(loggedInUserId) {
+        if (loggedInUserId != null) {
+            isLoading = true
+            try {
+                val response = apiService.getPengurusById(loggedInUserId)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val pengurus = response.body()?.data
+                    nama = pengurus?.namaPengurus ?: ""
+                    jabatan = pengurus?.jabatan ?: ""
+                    jadwalPiket = pengurus?.jadwalPiket?.hariPiket ?: "Belum ditentukan"
+                    nomorHP = pengurus?.nomorHp ?: ""
+                    alamat = pengurus?.alamat ?: ""
+                } else {
+                    errorMessage = "Gagal memuat data profile"
+                }
+            } catch (e: Exception) {
+                errorMessage = "Error: ${e.message}"
+            } finally {
+                isLoading = false
+            }
+        } else {
+            isLoading = false
+            errorMessage = "Anda belum login"
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -42,151 +87,193 @@ fun ProfileScreen(navController: NavController) {
                     onMenuClick = { isMenuVisible = true },
                     onNotificationClick = { /* Handle notification */ }
                 )
-            }
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) }
         ) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFFF8FAF9))
-                    .padding(innerPadding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Profile Image with border
+            if (isLoading) {
+                // Loading state
                 Box(
                     modifier = Modifier
-                        .size(140.dp)
-                        .border(
-                            width = 3.dp,
-                            color = Color(0xFFBDD99E),
-                            shape = CircleShape
-                        )
-                        .padding(4.dp)
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentAlignment = Alignment.Center
                 ) {
+                    CircularProgressIndicator(color = Color(0xFF6B9B4D))
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFF8FAF9))
+                        .padding(innerPadding)
+                        .verticalScroll(rememberScrollState())
+                        .padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Profile Image with border
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                            .background(Color(0xFFBDD99E)),
-                        contentAlignment = Alignment.Center
+                            .size(140.dp)
+                            .border(
+                                width = 3.dp,
+                                color = Color(0xFFBDD99E),
+                                shape = CircleShape
+                            )
+                            .padding(4.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile Picture",
-                            tint = Color.White,
-                            modifier = Modifier.size(70.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .background(Color(0xFFBDD99E)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Profile Picture",
+                                tint = Color.White,
+                                modifier = Modifier.size(70.dp)
+                            )
+                        }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                // Edit Title
-                Text(
-                    text = "Edit",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF6B9B4D)
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Form Card
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    color = Color.White.copy(alpha = 0.7f),
-                    border = BorderStroke(
-                        2.dp,
-                        Color(0xFFBDD99E)
+                    // Edit Title
+                    Text(
+                        text = "Edit Profile",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF6B9B4D)
                     )
-                ) {
-                    Column(
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Form Card
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        color = Color.White.copy(alpha = 0.7f),
+                        border = BorderStroke(
+                            2.dp,
+                            Color(0xFFBDD99E)
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp)
+                        ) {
+                            // Nama (read-only)
+                            ProfileTextField(
+                                label = "Nama",
+                                value = nama,
+                                onValueChange = { },
+                                enabled = false
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Jabatan (read-only)
+                            ProfileTextField(
+                                label = "Jabatan",
+                                value = jabatan,
+                                onValueChange = { },
+                                enabled = false
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Jadwal Piket (read-only)
+                            ProfileTextField(
+                                label = "Jadwal Piket",
+                                value = jadwalPiket,
+                                onValueChange = { },
+                                enabled = false
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Nomor HP (editable)
+                            ProfileTextField(
+                                label = "Nomor HP",
+                                value = nomorHP,
+                                onValueChange = { nomorHP = it },
+                                placeholder = "Masukkan nomor HP",
+                                enabled = true
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Alamat (editable)
+                            ProfileTextField(
+                                label = "Alamat",
+                                value = alamat,
+                                onValueChange = { alamat = it },
+                                placeholder = "Masukkan alamat",
+                                enabled = true,
+                                singleLine = false,
+                                minLines = 3
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Update Button
+                    Button(
+                        onClick = {
+                            if (loggedInUserId != null) {
+                                isUpdating = true
+                                scope.launch {
+                                    try {
+                                        val updateRequest = com.example.myhipmi.data.remote.request.UpdatePengurusRequest(
+                                            nomorHp = nomorHP.ifBlank { null },
+                                            alamat = alamat.ifBlank { null }
+                                        )
+                                        val response = apiService.updatePengurus(loggedInUserId, updateRequest)
+                                        if (response.isSuccessful && response.body()?.success == true) {
+                                            snackbarHostState.showSnackbar("Profile berhasil diperbarui!")
+                                        } else {
+                                            snackbarHostState.showSnackbar("Gagal memperbarui profile")
+                                        }
+                                    } catch (e: Exception) {
+                                        snackbarHostState.showSnackbar("Error: ${e.message}")
+                                    } finally {
+                                        isUpdating = false
+                                    }
+                                }
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF6B9B4D)
+                        ),
+                        enabled = !isUpdating
                     ) {
-                        // Nama
-                        ProfileTextField(
-                            label = "Nama",
-                            value = nama,
-                            onValueChange = { nama = it },
-                            enabled = false
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Jabatan
-                        ProfileTextField(
-                            label = "Jabatan",
-                            value = jabatan,
-                            onValueChange = { jabatan = it },
-                            enabled = false
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Jadwal Piket
-                        ProfileTextField(
-                            label = "Jadwal Piket",
-                            value = jadwalPiket,
-                            onValueChange = { jadwalPiket = it },
-                            enabled = false
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Nomor HP
-                        ProfileTextField(
-                            label = "Nomor HP",
-                            value = nomorHP,
-                            onValueChange = { nomorHP = it },
-                            placeholder = "Masukkan nomor HP",
-                            enabled = true
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Alamat
-                        ProfileTextField(
-                            label = "Alamat",
-                            value = alamat,
-                            onValueChange = { alamat = it },
-                            placeholder = "Masukkan alamat",
-                            enabled = true,
-                            singleLine = false,
-                            minLines = 3
+                        if (isUpdating) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Text(
+                            text = if (isUpdating) "Memperbarui..." else "Perbarui",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Update Button
-                Button(
-                    onClick = {
-                        // Handle update profile
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF6B9B4D)
-                    )
-                ) {
-                    Text(
-                        text = "Perbarui",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
             }
         }
 
@@ -194,8 +281,8 @@ fun ProfileScreen(navController: NavController) {
         MenuDrawer(
             isVisible = isMenuVisible,
             onDismiss = { isMenuVisible = false },
-            userName = nama,
-            userRole = jabatan,
+            userName = nama.ifEmpty { "Pengurus" },
+            userRole = jabatan.ifEmpty { "Sekretaris Umum" },
             onProfileClick = {
                 isMenuVisible = false
                 navController.navigate("profile")
@@ -206,7 +293,10 @@ fun ProfileScreen(navController: NavController) {
             },
             onLogoutClick = {
                 isMenuVisible = false
-                // TODO: Handle logout
+                sessionManager.clearSession()
+                navController.navigate("login") {
+                    popUpTo("home") { inclusive = true }
+                }
             }
         )
     }

@@ -100,7 +100,8 @@ fun RapatScreen(navController: NavHostController) {
                 MyHipmiTopBar(
                     title = "Agenda Rapat",
                     onBackClick = { navController.popBackStack() },
-                    onMenuClick = { isMenuVisible = true }
+                    onMenuClick = { isMenuVisible = true },
+                    onNotificationClick = { navController.navigate("notifications") }
                 )
             },
             snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -356,7 +357,7 @@ fun RapatCard(
                         val (statusText, statusColor, statusIcon) = when {
                             rapat.isDone -> Triple("Sudah Absen", PrimaryGreen, Icons.Default.CheckCircle)
                             isExpired -> Triple("Waktu Habis", RedPrimary, Icons.Default.Schedule)
-                            else -> Triple("Belum Absen", YellowPrimary, Icons.Default.PendingActions)
+                            else -> Triple("Belum Absen", BluePrimary, Icons.Default.PendingActions)
                         }
 
                         Icon(

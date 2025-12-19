@@ -96,7 +96,7 @@ fun HomeScreen(
                     val response = ApiConfig.getApiService().getPengurusById(loggedInUserId)
                     if (response.isSuccessful && response.body()?.success == true) {
                         val pengurus = response.body()?.data
-                        hariPiket = pengurus?.jadwal?.hariPiket ?: "Belum ditentukan"
+                        hariPiket = pengurus?.jadwalPiket?.hariPiket ?: "Belum ditentukan"
                     } else {
                         hariPiket = "Belum ditentukan"
                     }

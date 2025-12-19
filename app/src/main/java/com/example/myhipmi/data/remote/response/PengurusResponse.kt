@@ -26,11 +26,17 @@ data class PengurusDetailData(
     @SerializedName("jabatan")
     val jabatan: String,
     
+    @SerializedName("nomor_hp")
+    val nomorHp: String?,
+    
+    @SerializedName("alamat")
+    val alamat: String?,
+    
     @SerializedName("id_jadwal_piket")
     val idJadwalPiket: Int?,
     
     @SerializedName("JadwalPiket")
-    val jadwal: JadwalPiketData?
+    val jadwalPiket: JadwalPiketData?
 )
 
 data class JadwalPiketData(

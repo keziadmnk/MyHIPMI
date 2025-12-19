@@ -71,7 +71,7 @@ class PiketNotificationWorker(
             
             if (response.isSuccessful && response.body()?.success == true) {
                 val pengurus = response.body()?.data
-                val hariPiket = pengurus?.jadwal?.hariPiket
+                val hariPiket = pengurus?.jadwalPiket?.hariPiket
                 
                 if (hariPiket != null) {
                     val hariSekarang = getCurrentDayName()
