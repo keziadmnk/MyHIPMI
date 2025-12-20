@@ -35,3 +35,10 @@ val CardGray = Color(0xFFE6E3C8)
 val TextPrimary = Color(0xFF2F2F2F)
 val TextSecondary = Color(0xFF7A7A7A)
 val BorderLight = Color(0xFFE1E1E1)
+
+// Colors for Kas Screens
+val KasScreenBackground = Color(0xFFE6F5E6)
+val KasDarkGreen = Color(0xFF6E8B6E)
+val KasAccentGreen = Color(0xFFA5D6A7)
+val StatusLunas = Color(0xFFC8E6C9)
+val StatusBelum = Color(0xFFFFCDD2)

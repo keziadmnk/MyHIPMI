@@ -100,6 +100,42 @@ interface ApiService {
         @Path("id_agenda") idAgenda: Int
     ): Response<AbsenListResponse>
 
+    // ========== KAS ENDPOINTS ==========
+
+    @GET("kas")
+    suspend fun getKas(
+        @Query("user_id") userId: Int? = null
+    ): Response<KasResponse>
+
+    @GET("kas/{id}")
+    suspend fun getKasDetail(
+        @Path("id") id: Int
+    ): Response<KasDetailResponse>
+
+    @Multipart
+    @POST("kas")
+    suspend fun createKas(
+        @Part("user_id") userId: RequestBody,
+        @Part("deskripsi") deskripsi: RequestBody,
+        @Part("nominal") nominal: RequestBody,
+        @Part file: MultipartBody.Part?
+    ): Response<KasDetailResponse>
+
+    @Multipart
+    @PUT("kas/{id}")
+    suspend fun updateKas(
+        @Path("id") id: Int,
+        @Part("deskripsi") deskripsi: RequestBody?,
+        @Part("nominal") nominal: RequestBody?,
+        @Part("status") status: RequestBody?,
+        @Part file: MultipartBody.Part?
+    ): Response<KasDetailResponse>
+
+    @DELETE("kas/{id}")
+    suspend fun deleteKas(
+        @Path("id") id: Int
+    ): Response<KasResponse>
+
     // ========== NOTIFICATION ENDPOINTS ==========
 
     @GET("notifications")

@@ -23,8 +23,9 @@ import com.example.myhipmi.ui.theme.TextPrimary
 fun MyHipmiTopBar(
     title: String,
     onBackClick: (() -> Unit)? = null,
-    onMenuClick: () -> Unit = {},
-    onNotificationClick: () -> Unit = {}
+    onMenuClick: (() -> Unit)? = null, // Diubah jadi nullable
+    onNotificationClick: (() -> Unit)? = null, // Diubah jadi nullable
+    actions: @Composable RowScope.() -> Unit = {} // Tambahan parameter actions
 ) {
 
     val gradientBrush = Brush.verticalGradient(
@@ -63,19 +64,31 @@ fun MyHipmiTopBar(
                 }
             },
             actions = {
-                IconButton(onClick = onNotificationClick) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = "Notifications",
-                        tint = DarkGreen
-                    )
+                // Jika actions custom diberikan, tampilkan itu
+                // Jika tidak, tampilkan default notification & menu (jika onMenuClick ada)
+                
+                // Kita gabungkan actions bawaan (notif/menu) dengan actions custom
+                if (onNotificationClick != null) {
+                    IconButton(onClick = onNotificationClick) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notifications",
+                            tint = DarkGreen
+                        )
+                    }
                 }
-                IconButton(onClick = onMenuClick) {
-                    Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = "Menu",
-                        tint = DarkGreen
-                    )
+                
+                // Render custom actions di sini
+                actions()
+
+                if (onMenuClick != null) {
+                    IconButton(onClick = onMenuClick) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Menu",
+                            tint = DarkGreen
+                        )
+                    }
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(

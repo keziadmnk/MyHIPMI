@@ -21,6 +21,8 @@ data class UserData(
     val namaPengurus: String? = null,
 
     @SerializedName("email_pengurus")
-    val emailPengurus: String? = null
-)
+    val emailPengurus: String? = null,
 
+    @SerializedName("jabatan")
+    val jabatan: String? = null
+)

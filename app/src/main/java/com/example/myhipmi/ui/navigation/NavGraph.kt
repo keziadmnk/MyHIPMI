@@ -8,6 +8,8 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.myhipmi.ui.screen.kas.KasScreen
+import com.example.myhipmi.ui.screen.kas.PembayaranKasScreen
+import com.example.myhipmi.ui.screen.kas.EditKasScreen
 import com.example.myhipmi.ui.screen.event.AddEventScreen
 import com.example.myhipmi.ui.screen.event.DetailEventScreen
 import com.example.myhipmi.ui.screen.event.EditEventScreen
@@ -67,6 +69,21 @@ fun NavGraph(navController: NavHostController) {
                 onEvent = { navController.navigate("event") }
             )
         }
+        composable("pembayaran_kas") {
+            PembayaranKasScreen(navController = navController)
+        }
+        
+        // Rute untuk edit kas (DIPERBAIKI)
+        composable(
+            route = "edit_kas/{kasId}",
+            arguments = listOf(
+                navArgument("kasId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val kasId = backStackEntry.arguments?.getInt("kasId") ?: 0
+            EditKasScreen(navController = navController, kasId = kasId)
+        }
+
         composable("rapat") { RapatScreen(navController) }
         composable("piket") { PiketScreen(navController) }
         composable("piket/upload") { DetailPiketScreen(navController) }

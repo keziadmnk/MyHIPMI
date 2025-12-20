@@ -33,7 +33,6 @@ import com.example.myhipmi.ui.theme.White
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun LoginPage(
@@ -280,6 +279,7 @@ fun LoginPage(
                                             idPengurus = user.idPengurus,
                                             namaPengurus = user.namaPengurus ?: "",
                                             emailPengurus = user.emailPengurus ?: "",
+                                            jabatan = user.jabatan ?: "Anggota",
                                             token = body.token ?: ""
                                         )
                                     }
