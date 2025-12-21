@@ -126,7 +126,7 @@ fun PembayaranKasScreen(
                 onBackClick = { (navController as NavHostController).popBackStack() }
             )
         },
-        containerColor = KasScreenBackground
+        containerColor = Color.White
     ) { paddingValues ->
         Column(
             modifier = Modifier

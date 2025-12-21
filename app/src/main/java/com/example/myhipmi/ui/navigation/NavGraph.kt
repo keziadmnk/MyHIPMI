@@ -9,7 +9,9 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.myhipmi.ui.screen.kas.KasScreen
 import com.example.myhipmi.ui.screen.kas.PembayaranKasScreen
+import com.example.myhipmi.ui.screen.kas.TambahKasScreen
 import com.example.myhipmi.ui.screen.kas.EditKasScreen
+import com.example.myhipmi.ui.screen.kas.BayarTagihanScreen
 import com.example.myhipmi.ui.screen.event.AddEventScreen
 import com.example.myhipmi.ui.screen.event.DetailEventScreen
 import com.example.myhipmi.ui.screen.event.EditEventScreen
@@ -54,7 +56,7 @@ fun NavGraph(navController: NavHostController) {
         // === Home ===
         composable("home") {
             HomeScreen(
-                navController = navController // <-- Tambahkan ini
+                navController = navController
             )
         }
 
@@ -72,8 +74,22 @@ fun NavGraph(navController: NavHostController) {
         composable("pembayaran_kas") {
             PembayaranKasScreen(navController = navController)
         }
+        composable("tambah_kas") {
+            TambahKasScreen(navController = navController)
+        }
         
-        // Rute untuk edit kas (DIPERBAIKI)
+        // Rute untuk Bayar Tagihan (Khusus Pending)
+        composable(
+            route = "bayar_tagihan/{kasId}",
+            arguments = listOf(
+                navArgument("kasId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val kasId = backStackEntry.arguments?.getInt("kasId") ?: 0
+            BayarTagihanScreen(navController = navController, kasId = kasId)
+        }
+        
+        // Rute untuk Detail/Edit Kas (Khusus Lunas/History)
         composable(
             route = "edit_kas/{kasId}",
             arguments = listOf(
@@ -157,7 +173,7 @@ fun NavGraph(navController: NavHostController) {
             )
         ) { backStackEntry ->
             val eventId = backStackEntry.arguments?.getInt("eventId") ?: 0
-            EditEventScreen(navController = navController, eventId = eventId) // <--- Rute Edit Baru
+            EditEventScreen(navController = navController, eventId = eventId)
         }
         
         // === Notification Screen ===

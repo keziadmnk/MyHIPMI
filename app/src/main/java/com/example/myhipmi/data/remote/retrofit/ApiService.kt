@@ -107,6 +107,9 @@ interface ApiService {
         @Query("user_id") userId: Int? = null
     ): Response<KasResponse>
 
+    @GET("kas/total")
+    suspend fun getTotalKas(): Response<TotalKasResponse>
+
     @GET("kas/{id}")
     suspend fun getKasDetail(
         @Path("id") id: Int

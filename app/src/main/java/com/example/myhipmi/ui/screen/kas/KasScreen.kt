@@ -1,6 +1,8 @@
 package com.example.myhipmi.ui.screen.kas
 
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -49,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.myhipmi.data.local.UserSessionManager
 import com.example.myhipmi.data.remote.response.KasItem
@@ -57,14 +61,11 @@ import com.example.myhipmi.ui.components.MyHipmiTopBar
 import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
 import com.example.myhipmi.ui.theme.KasAccentGreen
 import com.example.myhipmi.ui.theme.KasDarkGreen
-import com.example.myhipmi.ui.theme.KasScreenBackground
 import com.example.myhipmi.ui.theme.MyHIPMITheme
 import com.example.myhipmi.ui.theme.StatusBelum
 import com.example.myhipmi.ui.theme.StatusLunas
 import com.example.myhipmi.ui.viewmodel.KasState
 import com.example.myhipmi.ui.viewmodel.KasViewModel
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,6 +99,27 @@ fun KasScreen(
     LaunchedEffect(Unit) {
         userSession.userRole.collect { role -> userRole = role ?: "Anggota" }
     }
+    
+    // Listen for results from Add Screen (Konfirmasi data ditambahkan)
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val savedStateHandle = navBackStackEntry?.savedStateHandle
+    
+    // Periksa apakah ada flag sukses dari screen sebelumnya
+    val addKasSuccess = savedStateHandle?.get<Boolean>("add_kas_success")
+    val paymentSuccess = savedStateHandle?.get<Boolean>("payment_success")
+    
+    LaunchedEffect(addKasSuccess, paymentSuccess) {
+        if (addKasSuccess == true) {
+            Toast.makeText(context, "Tagihan berhasil ditambahkan", Toast.LENGTH_SHORT).show()
+            if (userId != 0) viewModel.getKas(userId)
+            savedStateHandle?.remove<Boolean>("add_kas_success")
+        }
+        if (paymentSuccess == true) {
+            Toast.makeText(context, "Pembayaran berhasil dikirim", Toast.LENGTH_SHORT).show()
+            if (userId != 0) viewModel.getKas(userId)
+            savedStateHandle?.remove<Boolean>("payment_success")
+        }
+    }
 
     val kasList by viewModel.kasList.collectAsState()
     val kasState by viewModel.kasState.collectAsState()
@@ -126,7 +148,7 @@ fun KasScreen(
                     onEvent = onEvent
                 )
             },
-            containerColor = KasScreenBackground
+            containerColor = Color.White
         ) { paddingValues ->
             Column(
                 modifier = Modifier
@@ -140,7 +162,7 @@ fun KasScreen(
                 // Tab Row
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
-                    containerColor = KasScreenBackground,
+                    containerColor = Color.White,
                     contentColor = KasDarkGreen,
                     indicator = { tabPositions ->
                         androidx.compose.material3.TabRowDefaults.Indicator(
@@ -166,7 +188,7 @@ fun KasScreen(
                     }
                 } else {
                     val filteredTransactions = if (selectedTabIndex == 0) {
-                        // Pending atau Belum Lunas (di sini asumsi backend return status 'pending' atau 'ditolak')
+                        // Pending atau Belum Lunas
                         kasList.filter { it.status.equals("pending", ignoreCase = true) || it.status.equals("ditolak", ignoreCase = true) }
                     } else {
                         // Riwayat (Lunas)
@@ -190,8 +212,13 @@ fun KasScreen(
                                 KasItemCard(
                                     transaction = transaction,
                                     onClick = {
-                                        // Navigasi ke EditKasScreen saat item diklik
-                                        navController.navigate("edit_kas/${transaction.id}")
+                                        if (transaction.status.equals("lunas", ignoreCase = true)) {
+                                            // Jika lunas, lihat detail (read-only)
+                                            navController.navigate("edit_kas/${transaction.id}")
+                                        } else {
+                                            // Jika pending/ditolak, masuk ke halaman Bayar
+                                            navController.navigate("bayar_tagihan/${transaction.id}")
+                                        }
                                     }
                                 )
                             }
@@ -199,11 +226,13 @@ fun KasScreen(
                     }
                 }
                 
-                // Tombol Bayar
+                // Tombol Actions
                 Spacer(modifier = Modifier.height(16.dp))
+                
+                // Tombol Tambah Tagihan
                 Button(
                     onClick = { 
-                        navController.navigate("pembayaran_kas")
+                        navController.navigate("tambah_kas")
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = KasAccentGreen),
                     shape = RoundedCornerShape(8.dp),
@@ -211,9 +240,9 @@ fun KasScreen(
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Bayar")
+                    Icon(Icons.Default.Add, contentDescription = null, tint = KasDarkGreen)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Bayar Kas Baru", color = KasDarkGreen)
+                    Text("Buat Tagihan", color = KasDarkGreen, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -245,9 +274,11 @@ fun KasItemCard(transaction: KasItem, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
+            .clickable { onClick() }
+            .border(1.dp, Color(0xFFEEEEEE), RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier

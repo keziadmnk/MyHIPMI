@@ -41,6 +41,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.example.myhipmi.data.remote.response.NotificationItem
 import com.example.myhipmi.data.local.UserSessionManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myhipmi.ui.viewmodel.HomeViewModel
+import com.example.myhipmi.ui.viewmodel.TotalKasState
+import androidx.compose.runtime.collectAsState
+import java.text.NumberFormat
 
 data class NavItem(val route: String, val index: Int)
 
@@ -55,6 +60,7 @@ val bottomBarItems = listOf(
 @Composable
 fun HomeScreen(
     navController: NavHostController,
+    viewModel: HomeViewModel = viewModel(),
     onNavigateToKas: () -> Unit = {},
     onNavigateToRapat: () -> Unit = {},
     onNavigateToPiket: () -> Unit = {},
@@ -68,6 +74,8 @@ fun HomeScreen(
     var recentNotifications by remember { mutableStateOf<List<NotificationItem>>(emptyList()) }
     var refreshTrigger by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
+    
+    val totalKasState by viewModel.totalKasState.collectAsState()
     
     // State untuk hari piket pengurus
     val context = LocalContext.current
@@ -113,9 +121,13 @@ fun HomeScreen(
         }
     }
     
-    // Fetch active event count and recent notifications
+    // Fetch active event count, recent notifications, and total kas
     LaunchedEffect(refreshTrigger) {
         android.util.Log.d("HomeScreen", "📱 Fetching data... trigger=$refreshTrigger")
+        
+        // Fetch total kas via ViewModel
+        viewModel.fetchTotalKas()
+        
         scope.launch {
             try {
                 // Fetch events
@@ -152,6 +164,14 @@ fun HomeScreen(
             Color(0xFFFFFFFF)
         )
     )
+    
+    val kasValue = when (val state = totalKasState) {
+        is TotalKasState.Success -> formatRupiah(state.totalKas)
+        is TotalKasState.Loading -> "Memuat..."
+        is TotalKasState.Error -> "Gagal"
+        else -> "Rp 0"
+    }
+
     Scaffold(
         bottomBar = {
             BottomNavBarContainer(
@@ -243,7 +263,7 @@ fun HomeScreen(
             ) {
                 SummaryCard(
                     title = "Kas Terkumpul",
-                    value = "Rp 1.5jt",
+                    value = kasValue,
                     icon = Icons.Default.AccountBalanceWallet,
                     bgColor = Color(0xFFBDD99E),
                     iconBgColor = Color(0xFFA8CC82),
@@ -515,4 +535,9 @@ fun BottomNavBarContainer(
             onEvent = onEvent
         )
     }
+}
+
+fun formatRupiah(amount: Double): String {
+    val format = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+    return format.format(amount).replace("Rp", "Rp ")
 }

@@ -156,7 +156,7 @@ fun EditKasScreen(
                 }
             )
         },
-        containerColor = KasScreenBackground
+        containerColor = Color.White
     ) { paddingValues ->
         if (kasState is KasState.Loading && selectedKas == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

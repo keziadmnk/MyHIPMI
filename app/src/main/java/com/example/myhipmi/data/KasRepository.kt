@@ -2,6 +2,7 @@ package com.example.myhipmi.data
 
 import com.example.myhipmi.data.remote.response.KasDetailResponse
 import com.example.myhipmi.data.remote.response.KasResponse
+import com.example.myhipmi.data.remote.response.TotalKasResponse
 import com.example.myhipmi.data.remote.retrofit.ApiService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -16,6 +17,19 @@ class KasRepository(private val apiService: ApiService) {
     fun getKas(userId: Int? = null): Flow<Result<KasResponse>> = flow {
         try {
             val response = apiService.getKas(userId)
+            if (response.isSuccessful && response.body() != null) {
+                emit(Result.success(response.body()!!))
+            } else {
+                emit(Result.failure(Exception(response.message())))
+            }
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
+
+    fun getTotalKas(): Flow<Result<TotalKasResponse>> = flow {
+        try {
+            val response = apiService.getTotalKas()
             if (response.isSuccessful && response.body() != null) {
                 emit(Result.success(response.body()!!))
             } else {
