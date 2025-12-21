@@ -28,14 +28,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.myhipmi.data.local.UserSessionManager
 import com.example.myhipmi.ui.components.MyHipmiTopBar
 import com.example.myhipmi.ui.theme.KasAccentGreen
 import com.example.myhipmi.ui.theme.KasDarkGreen
-import com.example.myhipmi.ui.theme.KasScreenBackground
 import com.example.myhipmi.ui.theme.MyHIPMITheme
 import com.example.myhipmi.ui.viewmodel.KasState
 import com.example.myhipmi.ui.viewmodel.KasViewModel
@@ -45,14 +43,13 @@ import com.example.myhipmi.utils.createImageUri
 @Composable
 fun EditKasScreen(
     navController: NavController,
-    kasId: Int, // Terima ID Kas
+    kasId: Int,
     viewModel: KasViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val userSession = remember { UserSessionManager(context) }
     var userId by remember { mutableIntStateOf(0) }
     
-    // Ambil detail kas saat pertama kali dibuka
     LaunchedEffect(kasId) {
         viewModel.getKasDetail(kasId)
     }
@@ -66,40 +63,36 @@ fun EditKasScreen(
     val selectedKas by viewModel.selectedKas.collectAsState()
     val kasState by viewModel.kasState.collectAsState()
 
-    // State form
     var deskripsi by remember { mutableStateOf("") }
     var nominalString by remember { mutableStateOf("") }
     var fileUri by remember { mutableStateOf<Uri?>(null) }
     var currentPosterUrl by remember { mutableStateOf<String?>(null) }
-    var status by remember { mutableStateOf("") } // Simpan status saat ini
+    var status by remember { mutableStateOf("") }
 
-    // Isi form ketika data detail berhasil diambil
     LaunchedEffect(selectedKas) {
         selectedKas?.let {
             deskripsi = it.deskripsi
-            nominalString = it.nominal.toLong().toString() // Hapus desimal jika ada
+            nominalString = it.nominal.toLong().toString()
             currentPosterUrl = it.buktiTransferUrl
             status = it.status
         }
     }
 
-    // Effect untuk menangani hasil update/delete
     LaunchedEffect(kasState) {
-        when (kasState) {
+        when (val currentState = kasState) {
             is KasState.Success -> {
-                Toast.makeText(context, (kasState as KasState.Success).message, Toast.LENGTH_SHORT).show()
+                navController.previousBackStackEntry?.savedStateHandle?.set("kas_action_message", currentState.message)
                 viewModel.resetState()
-                (navController as NavHostController).popBackStack()
+                navController.popBackStack()
             }
             is KasState.Error -> {
-                Toast.makeText(context, (kasState as KasState.Error).error, Toast.LENGTH_LONG).show()
+                Toast.makeText(context, currentState.error, Toast.LENGTH_LONG).show()
                 viewModel.resetState()
             }
             else -> {}
         }
     }
 
-    // Camera & Gallery Launchers
     var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -112,7 +105,6 @@ fun EditKasScreen(
         uri?.let { fileUri = it }
     }
     
-    // Dialog Konfirmasi Hapus
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     if (showDeleteDialog) {
@@ -143,9 +135,8 @@ fun EditKasScreen(
         topBar = {
             MyHipmiTopBar(
                 title = "Edit Kas",
-                onBackClick = { (navController as NavHostController).popBackStack() },
+                onBackClick = { navController.popBackStack() },
                 actions = {
-                    // Tombol Hapus di pojok kanan atas
                     IconButton(onClick = { showDeleteDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
@@ -169,11 +160,12 @@ fun EditKasScreen(
                     .padding(paddingValues)
                     .padding(16.dp)
             ) {
-                // Field Nominal
                 Text("Nominal Pembayaran", fontWeight = FontWeight.Medium, color = KasDarkGreen, modifier = Modifier.padding(bottom = 8.dp))
                 OutlinedTextField(
                     value = nominalString,
-                    onValueChange = { nominalString = it },
+                    onValueChange = { newValue ->
+                        nominalString = newValue.filter { it.isDigit() }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape = RoundedCornerShape(8.dp),
@@ -186,7 +178,6 @@ fun EditKasScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Field Deskripsi
                 Text("Deskripsi / Bulan", fontWeight = FontWeight.Medium, color = KasDarkGreen, modifier = Modifier.padding(bottom = 8.dp))
                 OutlinedTextField(
                     value = deskripsi,
@@ -202,7 +193,6 @@ fun EditKasScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Upload Bukti
                 Text("Bukti Pembayaran", fontWeight = FontWeight.Medium, color = KasDarkGreen, modifier = Modifier.padding(bottom = 8.dp))
                 Box(
                     modifier = Modifier
@@ -260,7 +250,6 @@ fun EditKasScreen(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Tombol Simpan
                 Button(
                     onClick = {
                          if (deskripsi.isBlank() || nominalString.isBlank()) {
@@ -275,7 +264,7 @@ fun EditKasScreen(
                             userId = userId,
                             deskripsi = deskripsi,
                             nominal = nominal,
-                            status = status, // Pertahankan status lama (atau ubah jadi 'pending' jika diedit user)
+                            status = status,
                             fileUri = fileUri
                         )
                     },

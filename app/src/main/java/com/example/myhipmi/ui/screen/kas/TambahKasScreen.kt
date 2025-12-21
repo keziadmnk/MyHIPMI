@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import com.example.myhipmi.data.local.UserSessionManager
 import com.example.myhipmi.ui.components.MyHipmiTopBar
 import com.example.myhipmi.ui.theme.KasAccentGreen
@@ -33,7 +32,6 @@ fun TambahKasScreen(
     var deskripsi by remember { mutableStateOf("") }
     var nominalString by remember { mutableStateOf("") }
     
-    // User Session
     val userSession = remember { UserSessionManager(context) }
     var userId by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
@@ -44,21 +42,18 @@ fun TambahKasScreen(
 
     val kasState by viewModel.kasState.collectAsState()
 
-    // Effect untuk menangani hasil submit
+    // Gunakan LaunchedEffect yang lebih robust untuk menangani navigasi sekali jalan
     LaunchedEffect(kasState) {
-        when (kasState) {
+        when (val currentState = kasState) {
             is KasState.Success -> {
+                // Kirim sinyal DULU
+                navController.previousBackStackEntry?.savedStateHandle?.set("kas_action_message", currentState.message)
+                // Baru reset state & navigasi
                 viewModel.resetState()
-                
-                // Set flag sukses ke backstack entry sebelumnya (KasScreen)
-                navController.previousBackStackEntry
-                    ?.savedStateHandle
-                    ?.set("add_kas_success", true)
-                
-                (navController as NavHostController).popBackStack()
+                navController.popBackStack()
             }
             is KasState.Error -> {
-                Toast.makeText(context, (kasState as KasState.Error).error, Toast.LENGTH_LONG).show()
+                Toast.makeText(context, currentState.error, Toast.LENGTH_LONG).show()
                 viewModel.resetState()
             }
             else -> {}
@@ -69,7 +64,7 @@ fun TambahKasScreen(
         topBar = {
             MyHipmiTopBar(
                 title = "Tambah Tagihan Kas",
-                onBackClick = { (navController as NavHostController).popBackStack() }
+                onBackClick = { navController.popBackStack() }
             )
         },
         containerColor = Color.White
@@ -81,7 +76,6 @@ fun TambahKasScreen(
                 .padding(16.dp)
         ) {
             
-            // Field untuk Nominal
             Text(
                 text = "Nominal Tagihan",
                 fontWeight = FontWeight.Medium,
@@ -90,7 +84,9 @@ fun TambahKasScreen(
             )
             OutlinedTextField(
                 value = nominalString,
-                onValueChange = { nominalString = it },
+                onValueChange = { newValue ->
+                    nominalString = newValue.filter { it.isDigit() }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Contoh: 50000") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -105,7 +101,6 @@ fun TambahKasScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Field untuk deskripsi
             Text(
                 text = "Deskripsi / Bulan",
                 fontWeight = FontWeight.Medium,
@@ -128,7 +123,6 @@ fun TambahKasScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Tombol Kirim
             Button(
                 onClick = { 
                     if (userId == 0) {
@@ -145,7 +139,6 @@ fun TambahKasScreen(
                         return@Button
                     }
                     
-                    // Panggil createKas dengan fileUri = null
                     viewModel.createKas(
                         context = context,
                         userId = userId,

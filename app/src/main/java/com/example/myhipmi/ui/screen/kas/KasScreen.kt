@@ -107,8 +107,9 @@ fun KasScreen(
     // Periksa apakah ada flag sukses dari screen sebelumnya
     val addKasSuccess = savedStateHandle?.get<Boolean>("add_kas_success")
     val paymentSuccess = savedStateHandle?.get<Boolean>("payment_success")
+    val kasActionMessage = savedStateHandle?.get<String>("kas_action_message")
     
-    LaunchedEffect(addKasSuccess, paymentSuccess) {
+    LaunchedEffect(addKasSuccess, paymentSuccess, kasActionMessage) {
         if (addKasSuccess == true) {
             Toast.makeText(context, "Tagihan berhasil ditambahkan", Toast.LENGTH_SHORT).show()
             if (userId != 0) viewModel.getKas(userId)
@@ -118,6 +119,11 @@ fun KasScreen(
             Toast.makeText(context, "Pembayaran berhasil dikirim", Toast.LENGTH_SHORT).show()
             if (userId != 0) viewModel.getKas(userId)
             savedStateHandle?.remove<Boolean>("payment_success")
+        }
+        if (kasActionMessage != null) {
+            Toast.makeText(context, kasActionMessage, Toast.LENGTH_SHORT).show()
+            if (userId != 0) viewModel.getKas(userId)
+            savedStateHandle?.remove<String>("kas_action_message")
         }
     }
 

@@ -77,8 +77,7 @@ class KasViewModel : ViewModel() {
                 val file: File? = fileUri?.let { FileUtil.from(context, it) }
                 repository.createKas(userId, deskripsi, nominal, file).collect { result ->
                     result.onSuccess {
-                        _kasState.value = KasState.Success(it.message ?: "Pembayaran berhasil dikirim")
-                        getKas(userId)
+                        _kasState.value = KasState.Success(it.message ?: "Tagihan berhasil dibuat")
                     }.onFailure {
                         _kasState.value = KasState.Error(it.message ?: "Gagal mengirim data")
                     }
@@ -105,7 +104,6 @@ class KasViewModel : ViewModel() {
                 repository.updateKas(id, deskripsi, nominal, status, file).collect { result ->
                     result.onSuccess {
                         _kasState.value = KasState.Success(it.message ?: "Data berhasil diupdate")
-                        getKas(userId) 
                     }.onFailure {
                         _kasState.value = KasState.Error(it.message ?: "Gagal update data")
                     }
@@ -121,10 +119,11 @@ class KasViewModel : ViewModel() {
             _kasState.value = KasState.Loading
             repository.deleteKas(id).collect { result ->
                 result.onSuccess {
-                    _kasState.value = KasState.Success(it.message ?: "Data berhasil dihapus")
+                    // Perbaikan: Pesan yang lebih sesuai untuk pembatalan/reset
+                    _kasState.value = KasState.Success(it.message ?: "Pembayaran telah dibatalkan")
                     getKas(userId)
                 }.onFailure {
-                    _kasState.value = KasState.Error(it.message ?: "Gagal menghapus data")
+                    _kasState.value = KasState.Error(it.message ?: "Gagal membatalkan pembayaran")
                 }
             }
         }

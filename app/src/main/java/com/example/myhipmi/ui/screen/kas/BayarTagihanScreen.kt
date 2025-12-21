@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.myhipmi.data.local.UserSessionManager
 import com.example.myhipmi.ui.components.MyHipmiTopBar
@@ -47,7 +46,6 @@ fun BayarTagihanScreen(
     val userSession = remember { UserSessionManager(context) }
     var userId by remember { mutableIntStateOf(0) }
     
-    // Ambil detail kas saat pertama kali dibuka
     LaunchedEffect(kasId) {
         viewModel.getKasDetail(kasId)
     }
@@ -61,10 +59,8 @@ fun BayarTagihanScreen(
     val selectedKas by viewModel.selectedKas.collectAsState()
     val kasState by viewModel.kasState.collectAsState()
 
-    // State untuk gambar
     var fileUri by remember { mutableStateOf<Uri?>(null) }
     
-    // Camera & Gallery Launchers
     var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -77,21 +73,15 @@ fun BayarTagihanScreen(
         uri?.let { fileUri = it }
     }
 
-    // Effect untuk menangani hasil update
     LaunchedEffect(kasState) {
-        when (kasState) {
+        when (val currentState = kasState) {
             is KasState.Success -> {
+                navController.previousBackStackEntry?.savedStateHandle?.set("kas_action_message", currentState.message)
                 viewModel.resetState()
-                
-                // Set flag sukses ke backstack entry sebelumnya (KasScreen)
-                navController.previousBackStackEntry
-                    ?.savedStateHandle
-                    ?.set("payment_success", true)
-                    
-                (navController as NavHostController).popBackStack()
+                navController.popBackStack()
             }
             is KasState.Error -> {
-                Toast.makeText(context, (kasState as KasState.Error).error, Toast.LENGTH_LONG).show()
+                Toast.makeText(context, currentState.error, Toast.LENGTH_LONG).show()
                 viewModel.resetState()
             }
             else -> {}
@@ -102,7 +92,7 @@ fun BayarTagihanScreen(
         topBar = {
             MyHipmiTopBar(
                 title = "Bayar Tagihan",
-                onBackClick = { (navController as NavHostController).popBackStack() }
+                onBackClick = { navController.popBackStack() }
             )
         },
         containerColor = Color.White
@@ -120,7 +110,6 @@ fun BayarTagihanScreen(
                         .padding(paddingValues)
                         .padding(16.dp)
                 ) {
-                    // Informasi Tagihan (Read Only)
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
@@ -144,7 +133,6 @@ fun BayarTagihanScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Upload Bukti
                     Text("Upload Bukti Transfer", fontWeight = FontWeight.Medium, color = KasDarkGreen, modifier = Modifier.padding(bottom = 8.dp))
                     Box(
                         modifier = Modifier
@@ -195,7 +183,6 @@ fun BayarTagihanScreen(
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    // Tombol Kirim
                     Button(
                         onClick = {
                              if (fileUri == null) {
@@ -203,15 +190,13 @@ fun BayarTagihanScreen(
                                 return@Button
                             }
                             
-                            // Gunakan updateKas untuk mengupdate bukti transfer
-                            // Ubah status menjadi "lunas" saat user mengirim bukti pembayaran
                             viewModel.updateKas(
                                 context = context,
                                 id = kasId,
                                 userId = userId,
                                 deskripsi = kas.deskripsi,
                                 nominal = kas.nominal,
-                                status = "lunas", // <--- PERBAIKAN DI SINI
+                                status = "lunas", 
                                 fileUri = fileUri
                             )
                         },
@@ -236,5 +221,5 @@ fun BayarTagihanScreen(
 
 fun formatRupiah(amount: Double): String {
     val format = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
-    return format.format(amount).replace("Rp", "Rp ")
+    return format.format(amount).replace(",00", "").replace("Rp", "Rp ")
 }
