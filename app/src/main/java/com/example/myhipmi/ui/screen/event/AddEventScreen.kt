@@ -344,168 +344,173 @@ fun AddEventScreen(navController: NavHostController) {
 
                 // Tombol "Tambah"
                 item {
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    AnimatedVisibility(
+                        visible = isVisible,
+                        enter = fadeIn(animationSpec = tween(400, delayMillis = 300)) +
+                                slideInVertically(initialOffsetY = { 30 })
                     ) {
-                            OutlinedButton(
-                                onClick = { navController.popBackStack() },
-                                enabled = !isLoading,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(52.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = GreenPrimary
-                                ),
-                                border = ButtonDefaults.outlinedButtonBorder.copy(
-                                    width = 1.5.dp
-                                )
-                            ) {
-                                Text(
-                                    text = "Batal",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-
-                            Button(
-                                onClick = {
-                                    android.util.Log.d("AddEventScreen", "Button clicked!")
-                                    // Validasi input wajib
-                                    errorMessage = null
-                                    successMessage = null
-                                    
-                                    android.util.Log.d("AddEventScreen", "Validating inputs...")
-                                    android.util.Log.d("AddEventScreen", "namaEvent: '$namaEvent', tanggal: '$tanggal', waktu: '$waktu', tempat: '$tempat', penyelenggara: '$penyelenggara'")
-                                    
-                                    if (namaEvent.isBlank() || tanggal.isBlank() || waktu.isBlank() || tempat.isBlank() || 
-                                        dresscode.isBlank() || penyelenggara.isBlank() || contactPerson.isBlank()) {
-                                        errorMessage = "Semua field wajib diisi kecuali deskripsi"
-                                        android.util.Log.d("AddEventScreen", "Validation failed: missing required fields")
-                                        return@Button
-                                    }
-
-                                    // Validasi id_pengurus
-                                    if (idPengurus == null) {
-                                        errorMessage = "Anda belum login. Silakan login terlebih dahulu."
-                                        android.util.Log.d("AddEventScreen", "Validation failed: idPengurus is null")
-                                        return@Button
-                                    }
-                                    
-                                    android.util.Log.d("AddEventScreen", "Validation passed, starting API call...")
-
-
-                                    coroutineScope.launch {
-                                        isLoading = true
-                                        try {
-                                            android.util.Log.d("AddEventScreen", "Starting event creation...")
-                                            android.util.Log.d("AddEventScreen", "File URI: $fileUri")
-                                            
-                                            val posterPart = fileUri?.let {
-                                                try {
-                                                    android.util.Log.d("AddEventScreen", "Converting URI to File...")
-                                                    val file = FileUtil.from(context, it)
-                                                    android.util.Log.d("AddEventScreen", "File created: ${file.name}, size: ${file.length()} bytes")
-                                                    
-                                                    val requestFile = file
-                                                        .asRequestBody("image/*".toMediaType())
-
-                                                    val part = MultipartBody.Part.createFormData(
-                                                        "poster",
-                                                        file.name,
-                                                        requestFile
-                                                    )
-                                                    android.util.Log.d("AddEventScreen", "MultipartBody.Part created successfully")
-                                                    part
-                                                } catch (e: Exception) {
-                                                    android.util.Log.e("AddEventScreen", "Error creating file part: ${e.message}", e)
-                                                    null
-                                                }
-                                            }
-                                            
-                                            android.util.Log.d("AddEventScreen", "Poster part: ${if (posterPart != null) "Created" else "Null"}")
-
-                                            val response = apiService.createEvent(
-                                                idPengurus.toString().toPlainRequestBody(),
-                                                namaEvent.toPlainRequestBody(),
-                                                tanggal.toPlainRequestBody(),
-                                                waktu.toPlainRequestBody(),
-                                                tempat.toPlainRequestBody(),
-                                                penyelenggara.toPlainRequestBody(),
-                                                dresscode.takeIf { it.isNotBlank() }?.toPlainRequestBody(),
-                                                contactPerson.takeIf { it.isNotBlank() }?.toPlainRequestBody(),
-                                                deskripsi.takeIf { it.isNotBlank() }?.toPlainRequestBody(),
-                                                posterPart
-                                            )
-
-                                            android.util.Log.d("AddEventScreen", "Response code: ${response.code()}, isSuccessful: ${response.isSuccessful()}")
-
-                                            if (response.isSuccessful) {
-                                                val responseBody = response.body()
-                                                val posterUrl = responseBody?.event?.posterUrl
-                                                android.util.Log.d("AddEventScreen", "Event created successfully!")
-                                                android.util.Log.d("AddEventScreen", "Poster URL from response: $posterUrl")
-                                                
-                                                if (posterUrl != null) {
-                                                    android.util.Log.d("AddEventScreen", "✅ Foto berhasil disimpan ke database: $posterUrl")
-                                                } else {
-                                                    android.util.Log.w("AddEventScreen", "⚠️ Poster URL null - foto mungkin tidak dikirim")
-                                                }
-                                                
-                                                successMessage = "Event berhasil ditambahkan${if (posterUrl != null) " dengan foto" else ""}"
-                                                Toast.makeText(context, "Event berhasil ditambahkan", Toast.LENGTH_SHORT).show()
-                                                delay(1000)
-                                                navController.navigate("event") {
-
-                                                    popUpTo("add_event") { inclusive = true }
-                                                    launchSingleTop = true
-                                                }
-                                            } else {
-                                                val errorBody = response.errorBody()?.string()
-                                                android.util.Log.e("AddEventScreen", "❌ Error response: ${response.code()}, body: $errorBody")
-                                                errorMessage = errorBody?.takeIf { it.isNotBlank() }
-                                                    ?: "Gagal menambahkan event (${response.code()})"
-                                            }
-
-                                        } catch (e: Exception) {
-                                            android.util.Log.e("AddEventScreen", "Exception occurred: ${e.message}", e)
-                                            errorMessage = "Terjadi kesalahan koneksi: ${e.localizedMessage ?: "Unknown error"}"
-                                            e.printStackTrace()
-                                        } finally {
-                                            isLoading = false
-                                        }
-                                    }
-                                },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(52.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = GreenPrimary
-                                ),
-                                shape = RoundedCornerShape(12.dp),
-                                enabled = !isLoading
-                            ) {
-                                if (isLoading) {
-                                    CircularProgressIndicator(
-                                        color = White,
-                                        strokeWidth = 2.dp,
-                                        modifier = Modifier.size(24.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                                OutlinedButton(
+                                    onClick = { navController.popBackStack() },
+                                    enabled = !isLoading,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(52.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = GreenPrimary
+                                    ),
+                                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                                        width = 1.5.dp
                                     )
-                                } else {
-                                    Icon(
-                                        Icons.Default.Add,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                ) {
                                     Text(
-                                        text = "Tambah Event",
-                                        color = White,
+                                        text = "Batal",
                                         fontSize = 16.sp,
-                                        fontWeight = FontWeight.SemiBold
+                                        fontWeight = FontWeight.Medium
                                     )
+                                }
+
+                                Button(
+                                    onClick = {
+                                        android.util.Log.d("AddEventScreen", "Button clicked!")
+                                        // Validasi input wajib
+                                        errorMessage = null
+                                        successMessage = null
+                                        
+                                        android.util.Log.d("AddEventScreen", "Validating inputs...")
+                                        android.util.Log.d("AddEventScreen", "namaEvent: '$namaEvent', tanggal: '$tanggal', waktu: '$waktu', tempat: '$tempat', penyelenggara: '$penyelenggara'")
+                                        
+                                        if (namaEvent.isBlank() || tanggal.isBlank() || waktu.isBlank() || tempat.isBlank() || 
+                                            dresscode.isBlank() || penyelenggara.isBlank() || contactPerson.isBlank()) {
+                                            errorMessage = "Semua field wajib diisi kecuali deskripsi"
+                                            android.util.Log.d("AddEventScreen", "Validation failed: missing required fields")
+                                            return@Button
+                                        }
+
+                                        // Validasi id_pengurus
+                                        if (idPengurus == null) {
+                                            errorMessage = "Anda belum login. Silakan login terlebih dahulu."
+                                            android.util.Log.d("AddEventScreen", "Validation failed: idPengurus is null")
+                                            return@Button
+                                        }
+                                        
+                                        android.util.Log.d("AddEventScreen", "Validation passed, starting API call...")
+
+
+                                        coroutineScope.launch {
+                                            isLoading = true
+                                            try {
+                                                android.util.Log.d("AddEventScreen", "Starting event creation...")
+                                                android.util.Log.d("AddEventScreen", "File URI: $fileUri")
+                                                
+                                                val posterPart = fileUri?.let {
+                                                    try {
+                                                        android.util.Log.d("AddEventScreen", "Converting URI to File...")
+                                                        val file = FileUtil.from(context, it)
+                                                        android.util.Log.d("AddEventScreen", "File created: ${file.name}, size: ${file.length()} bytes")
+                                                        
+                                                        val requestFile = file
+                                                            .asRequestBody("image/*".toMediaType())
+
+                                                        val part = MultipartBody.Part.createFormData(
+                                                            "poster",
+                                                            file.name,
+                                                            requestFile
+                                                        )
+                                                        android.util.Log.d("AddEventScreen", "MultipartBody.Part created successfully")
+                                                        part
+                                                    } catch (e: Exception) {
+                                                        android.util.Log.e("AddEventScreen", "Error creating file part: ${e.message}", e)
+                                                        null
+                                                    }
+                                                }
+                                                
+                                                android.util.Log.d("AddEventScreen", "Poster part: ${if (posterPart != null) "Created" else "Null"}")
+
+                                                val response = apiService.createEvent(
+                                                    idPengurus.toString().toPlainRequestBody(),
+                                                    namaEvent.toPlainRequestBody(),
+                                                    tanggal.toPlainRequestBody(),
+                                                    waktu.toPlainRequestBody(),
+                                                    tempat.toPlainRequestBody(),
+                                                    penyelenggara.toPlainRequestBody(),
+                                                    dresscode.takeIf { it.isNotBlank() }?.toPlainRequestBody(),
+                                                    contactPerson.takeIf { it.isNotBlank() }?.toPlainRequestBody(),
+                                                    deskripsi.takeIf { it.isNotBlank() }?.toPlainRequestBody(),
+                                                    posterPart
+                                                )
+
+                                                android.util.Log.d("AddEventScreen", "Response code: ${response.code()}, isSuccessful: ${response.isSuccessful()}")
+
+                                                if (response.isSuccessful) {
+                                                    val responseBody = response.body()
+                                                    val posterUrl = responseBody?.event?.posterUrl
+                                                    android.util.Log.d("AddEventScreen", "Event created successfully!")
+                                                    android.util.Log.d("AddEventScreen", "Poster URL from response: $posterUrl")
+                                                    
+                                                    if (posterUrl != null) {
+                                                        android.util.Log.d("AddEventScreen", "✅ Foto berhasil disimpan ke database: $posterUrl")
+                                                    } else {
+                                                        android.util.Log.w("AddEventScreen", "⚠️ Poster URL null - foto mungkin tidak dikirim")
+                                                    }
+                                                    
+                                                    successMessage = "Event berhasil ditambahkan${if (posterUrl != null) " dengan foto" else ""}"
+                                                    Toast.makeText(context, "Event berhasil ditambahkan", Toast.LENGTH_SHORT).show()
+                                                    delay(1000)
+                                                    navController.navigate("event") {
+
+                                                        popUpTo("add_event") { inclusive = true }
+                                                        launchSingleTop = true
+                                                    }
+                                                } else {
+                                                    val errorBody = response.errorBody()?.string()
+                                                    android.util.Log.e("AddEventScreen", "❌ Error response: ${response.code()}, body: $errorBody")
+                                                    errorMessage = errorBody?.takeIf { it.isNotBlank() }
+                                                        ?: "Gagal menambahkan event (${response.code()})"
+                                                }
+
+                                            } catch (e: Exception) {
+                                                android.util.Log.e("AddEventScreen", "Exception occurred: ${e.message}", e)
+                                                errorMessage = "Terjadi kesalahan koneksi: ${e.localizedMessage ?: "Unknown error"}"
+                                                e.printStackTrace()
+                                            } finally {
+                                                isLoading = false
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(52.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = GreenPrimary
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                    enabled = !isLoading
+                                ) {
+                                    if (isLoading) {
+                                        CircularProgressIndicator(
+                                            color = White,
+                                            strokeWidth = 2.dp,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    } else {
+                                        Icon(
+                                            Icons.Default.Add,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "Tambah Event",
+                                            color = White,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
                                 }
                             }
                         }

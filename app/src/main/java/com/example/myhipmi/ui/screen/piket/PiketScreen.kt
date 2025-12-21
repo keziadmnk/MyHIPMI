@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -165,10 +166,8 @@ fun PiketScreen(navController: NavHostController) {
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
-                        Brush.verticalGradient(
-                            0f to BackgroundLight,
-                            0.25f to White
-                        )
+                        White
+
                     )
                     .padding(innerPadding)
             ) {
@@ -297,10 +296,15 @@ private fun PiketHariCard(
     isLoading: Boolean
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(14.dp),
+                clip = false
+            ),
         colors = CardDefaults.cardColors(containerColor = CardGreen),
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, BorderLight),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
@@ -333,10 +337,15 @@ private fun TodayPiketCard(
     onUploadClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(14.dp),
+                clip = false
+            ),
         colors = CardDefaults.cardColors(containerColor = CardGreen),
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, BorderLight),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
@@ -380,10 +389,14 @@ private fun PiketHistoryCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(14.dp),
+                clip = false
+            )
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = White),
-        border = BorderStroke(1.dp, BorderLight),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(

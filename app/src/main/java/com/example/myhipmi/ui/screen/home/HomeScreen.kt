@@ -321,8 +321,8 @@ fun HomeScreen(
     MenuDrawer(
         isVisible = isMenuVisible,
         onDismiss = { isMenuVisible = false },
-        userName = "Nagita Slavina",
-        userRole = "Sekretaris Umum",
+        userName = sessionManager.getNamaPengurus() ?: "Pengguna",
+        userRole = sessionManager.getJabatan() ?: "Jabatan belum diatur",
         onProfileClick = {
             navController.navigate("profile")
             isMenuVisible = false

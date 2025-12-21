@@ -8,16 +8,19 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -244,10 +247,7 @@ fun DetailPiketScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
-                    Brush.verticalGradient(
-                        0f to BackgroundLight,
-                        0.25f to White
-                    )
+                    White
                 )
                 .padding(innerPadding)
         ) {
@@ -257,20 +257,18 @@ fun DetailPiketScreen(
                     .padding(horizontal = 16.dp),
             ) {
                 Spacer(Modifier.height(12.dp))
-                Text(
-                    text = "Upload Absen Piket",
-                    color = TextPrimary,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontSize = 22.sp
-                )
-                Spacer(Modifier.height(12.dp))
 
                 // Kartu "Piket Hari Ini"
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(
+                            elevation = 6.dp,
+                            shape = RoundedCornerShape(14.dp),
+                            clip = false
+                        ),
                     shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = CardGreen),
-                    border = BorderStroke(1.dp, BorderLight),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(Modifier.padding(16.dp)) {
@@ -293,11 +291,20 @@ fun DetailPiketScreen(
                 Spacer(Modifier.height(16.dp))
 
                 // Form Jam Mulai
-                Text(
-                    text = "Jam Mulai",
-                    color = TextPrimary,
-                    style = MaterialTheme.typography.labelLarge
-                )
+                Row {
+                    Text(
+                        text = "Jam Mulai",
+                        color = TextPrimary,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = " *",
+                        color = Color.Red,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
                 Spacer(Modifier.height(6.dp))
                 PiketTimeField(
                     value = jamMulai,
@@ -308,11 +315,20 @@ fun DetailPiketScreen(
                 Spacer(Modifier.height(12.dp))
                 
                 // Form Jam Selesai
-                Text(
-                    text = "Jam Selesai",
-                    color = TextPrimary,
-                    style = MaterialTheme.typography.labelLarge
-                )
+                Row {
+                    Text(
+                        text = "Jam Selesai",
+                        color = TextPrimary,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = " *",
+                        color = Color.Red,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
                 Spacer(Modifier.height(6.dp))
                 PiketTimeField(
                     value = jamSelesai,
@@ -323,32 +339,48 @@ fun DetailPiketScreen(
                 Spacer(Modifier.height(12.dp))
 
                 // Label deskripsi
-                Text(
-                    text = "Deskripsi",
-                    color = TextPrimary,
-                    style = MaterialTheme.typography.labelLarge
-                )
+                Row {
+                    Text(
+                        text = "Deskripsi",
+                        color = TextPrimary,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = " *",
+                        color = Color.Red,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
                 Spacer(Modifier.height(6.dp))
 
                 // TextField deskripsi
                 OutlinedTextField(
                     value = deskripsi,
                     onValueChange = { deskripsi = it },
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Description,
+                            contentDescription = null,
+                            tint = GreenPrimary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryGreen,
-                        unfocusedBorderColor = BorderLight,
+                        focusedBorderColor = GreenPrimary,
+                        unfocusedBorderColor = Color(0xFFE5E7EB),
                         cursorColor = GreenPrimary,
-                        focusedContainerColor = SecondaryGreen,
-                        unfocusedContainerColor = SecondaryGreen,
-                        focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedTextColor = Color(0xFF1F2937),
+                        unfocusedTextColor = Color(0xFF1F2937)
                     ),
                     placeholder = {
-                        Text("Tulis keterangan singkat…", color = TextSecondary)
+                        Text("Tulis keterangan piket…", color = Color(0xFFD1D5DB))
                     }
                 )
 
@@ -597,13 +629,15 @@ fun PiketTimeField(
     placeholder: String,
     onClick: () -> Unit
 ) {
-    Surface(
-        shape = RoundedCornerShape(10.dp),
-        shadowElevation = 2.dp,
-        color = SecondaryGreen,
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ) {
+                onClick()
+            }
     ) {
         OutlinedTextField(
             value = value,
@@ -611,25 +645,23 @@ fun PiketTimeField(
             readOnly = true,
             enabled = false,
             placeholder = {
-                Text(placeholder, color = TextSecondary)
+                Text(placeholder, color = Color(0xFFD1D5DB))
             },
-            trailingIcon = {
+            leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.AccessTime,
                     contentDescription = null,
-                    tint = GreenPrimary
+                    tint = GreenPrimary,
+                    modifier = Modifier.size(20.dp)
                 )
             },
-            shape = RoundedCornerShape(10.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
-                disabledTextColor = if (value.isBlank()) TextSecondary else TextPrimary,
-                disabledBorderColor = BorderLight,
-                disabledLabelColor = TextSecondary,
-                disabledContainerColor = Color.Transparent,
-                disabledTrailingIconColor = GreenPrimary
+                disabledTextColor = if (value.isBlank()) Color(0xFFD1D5DB) else Color(0xFF1F2937),
+                disabledBorderColor = Color(0xFFE5E7EB),
+                disabledContainerColor = Color.White,
+                disabledLeadingIconColor = GreenPrimary
             )
         )
     }

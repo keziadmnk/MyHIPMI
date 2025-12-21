@@ -384,10 +384,9 @@ fun EventCard(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(
-                elevation = 16.dp,
+                elevation = 6.dp,
                 shape = RoundedCornerShape(16.dp),
-                spotColor = Color.Black.copy(alpha = 0.25f),
-                ambientColor = Color.Black.copy(alpha = 0.2f)
+                clip = false
             )
             .graphicsLayer {
                 scaleX = scale
