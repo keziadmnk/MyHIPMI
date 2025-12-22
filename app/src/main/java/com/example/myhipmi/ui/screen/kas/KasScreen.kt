@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -27,6 +28,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -66,6 +68,7 @@ import com.example.myhipmi.ui.theme.StatusBelum
 import com.example.myhipmi.ui.theme.StatusLunas
 import com.example.myhipmi.ui.viewmodel.KasState
 import com.example.myhipmi.ui.viewmodel.KasViewModel
+import com.example.myhipmi.utils.KasNotificationHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -138,8 +141,23 @@ fun KasScreen(
         Scaffold(
             topBar = {
                 MyHipmiTopBar(
-                   title = "Kas Saya",
-                    onBackClick = { (navController as NavHostController).popBackStack() }
+                    title = "Kas Saya",
+                    onBackClick = { (navController as NavHostController).popBackStack() },
+                    onMenuClick = { isMenuVisible = true },
+                    onNotificationClick = { (navController as NavHostController).navigate("notifications") },
+                    actions = {
+                        // Tombol Test Notifikasi Kas
+                        IconButton(onClick = { 
+                            KasNotificationHelper.showKasNotification(context)
+                            Toast.makeText(context, "Notifikasi Kas Dikirim", Toast.LENGTH_SHORT).show()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.NotificationsActive,
+                                contentDescription = "Test Notification",
+                                tint = KasDarkGreen
+                            )
+                        }
+                    }
                 )
             },
             bottomBar = {

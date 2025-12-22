@@ -13,7 +13,9 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.myhipmi.ui.navigation.NavGraph
 import com.example.myhipmi.ui.theme.MyHIPMITheme
+import com.example.myhipmi.utils.KasNotificationHelper
 import com.example.myhipmi.utils.PiketNotificationHelper
+import com.example.myhipmi.worker.KasNotificationWorker
 import com.example.myhipmi.worker.PiketNotificationWorker
 import com.google.firebase.messaging.FirebaseMessaging
 import java.util.concurrent.TimeUnit
@@ -41,15 +43,32 @@ class MainActivity : ComponentActivity() {
                 }
                 Log.d("FCM", msg)
             }
+
+        // Subscribe ke topic 'kas_reminder' untuk menerima notifikasi reminder kas
+        FirebaseMessaging.getInstance().subscribeToTopic("kas_reminder")
+            .addOnCompleteListener { task ->
+                var msg = "Subscribed to kas_reminder topic"
+                if (!task.isSuccessful) {
+                    msg = "Failed to subscribe to kas_reminder topic"
+                }
+                Log.d("FCM", msg)
+            }
         
         // Setup notification channel untuk piket
         PiketNotificationHelper.createNotificationChannel(this)
         
+        // Setup notification channel untuk kas
+        KasNotificationHelper.createNotificationChannel(this)
+        
         // Schedule periodic work untuk check piket setiap hari jam 6 pagi
         schedulePiketNotification()
         
+        // Schedule periodic work untuk check kas (misal setiap hari cek tanggal)
+        scheduleKasNotification()
+        
         // UNCOMMENT BARIS INI UNTUK TEST NOTIFIKASI LANGSUNG (untuk testing)
-         testPiketNotification()
+        // testPiketNotification()
+        testKasNotification() // <-- Testing notifikasi kas
         
         setContent {
             MyHIPMITheme {
@@ -82,6 +101,26 @@ class MainActivity : ComponentActivity() {
         
         Log.d("MainActivity", "Piket notification work scheduled")
     }
+
+    private fun scheduleKasNotification() {
+        val constraints = Constraints.Builder()
+            .setRequiresCharging(false)
+            .setRequiresBatteryNotLow(false)
+            .build()
+
+        // Cek setiap hari apakah sudah waktunya bayar kas
+        val workRequest = PeriodicWorkRequestBuilder<KasNotificationWorker>(
+            24, TimeUnit.HOURS
+        )
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "kas_notification_work",
+            ExistingPeriodicWorkPolicy.KEEP,
+            workRequest
+        )
+    }
     
     // Fungsi untuk test notifikasi langsung (untuk debugging)
     private fun testPiketNotification() {
@@ -96,6 +135,20 @@ class MainActivity : ComponentActivity() {
             .build()
         WorkManager.getInstance(this).enqueue(testWorkRequest)
         Log.d("MainActivity", "✅ Test worker enqueued")
+    }
+
+    private fun testKasNotification() {
+        Log.d("MainActivity", "🧪 Testing kas notification...")
+        
+        // Test 1: Langsung show notifikasi
+        KasNotificationHelper.showKasNotification(this)
+        Log.d("MainActivity", "✅ Test kas notification sent directly")
+        
+        // Test 2: Jalankan worker sekali untuk test
+        val testWorkRequest = OneTimeWorkRequestBuilder<KasNotificationWorker>()
+            .build()
+        WorkManager.getInstance(this).enqueue(testWorkRequest)
+        Log.d("MainActivity", "✅ Test kas worker enqueued")
     }
 }
 

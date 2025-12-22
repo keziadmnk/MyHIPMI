@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.myhipmi.MainActivity
 import com.example.myhipmi.R
+import com.example.myhipmi.utils.KasNotificationHelper
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
@@ -17,40 +18,47 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
-        
+
         Log.d(TAG, "📩 Message received from: ${remoteMessage.from}")
         Log.d(TAG, "📩 Data payload: ${remoteMessage.data}")
         Log.d(TAG, "📩 Notification payload: ${remoteMessage.notification}")
-        
-        // Get title and body from notification OR data
-        val title = remoteMessage.notification?.title 
-                    ?: remoteMessage.data["title"] 
-                    ?: "Notifikasi Baru!"
-        
-        val body = remoteMessage.notification?.body 
-                   ?: remoteMessage.data["body"] 
-                   ?: "Ada notifikasi baru untuk Anda"
-        
-        Log.d(TAG, "🔔 Preparing notification - Title: $title, Body: $body")
-        
-        // ALWAYS show notification regardless of app state
-        showNotification(title, body)
+
+        // Check if message contains a data payload.
+        if (remoteMessage.data.isNotEmpty()) {
+            val type = remoteMessage.data["type"]
+            val title = remoteMessage.data["title"] ?: "Notifikasi Baru"
+            val body = remoteMessage.data["body"] ?: "Ada pesan baru untuk Anda"
+
+            if (type == "kas_reminder") {
+                Log.d(TAG, "💰 Handling Kas Reminder Notification")
+                KasNotificationHelper.showKasReminderNotification(this, title, body)
+                return // Stop here as we handled it specifically
+            }
+        }
+
+        // Check if message contains a notification payload.
+        remoteMessage.notification?.let {
+            val title = it.title ?: "Notifikasi Baru!"
+            val body = it.body ?: "Ada notifikasi baru untuk Anda"
+            Log.d(TAG, "🔔 Showing standard notification - Title: $title, Body: $body")
+            showNotification(title, body)
+        }
     }
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d(TAG, "Refreshed token: $token")
-        
+
         // Kirim token ke server jika diperlukan
         // sendRegistrationToServer(token)
     }
 
     private fun showNotification(title: String, message: String) {
         Log.d(TAG, "🔔 showNotification called with title: $title, message: $message")
-        
+
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notificationId = System.currentTimeMillis().toInt()
-        
+
         // Buat Channel untuk Android O ke atas
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
