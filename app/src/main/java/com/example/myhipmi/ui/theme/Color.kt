@@ -23,7 +23,6 @@ val TextDark = Color(0xFF1B5E20)
 val TextLight = Color(0xFFFFFFFF)
 val GrayBorder = Color(0xFFBDBDBD)
 
-val PrimaryGreen = Color(0xFF7BAE7F)
 val SecondaryGreen = Color(0xFFEEEFEC)
 val LightYellow = Color(0xFFF9F6C9)
 val LightGrayBg = Color(0xFFF6F6F6)

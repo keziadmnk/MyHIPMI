@@ -71,6 +71,7 @@ fun HomeScreen(
 ) {
     var isMenuVisible by remember { mutableStateOf(false) }
     var activeEventCount by remember { mutableStateOf(0) }
+    var activeRapatCount by remember { mutableStateOf(0) }
     var recentNotifications by remember { mutableStateOf<List<NotificationItem>>(emptyList()) }
     var refreshTrigger by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
@@ -121,7 +122,7 @@ fun HomeScreen(
         }
     }
     
-    // Fetch active event count, recent notifications, and total kas
+    // Fetch active event count, active rapat count, recent notifications, and total kas
     LaunchedEffect(refreshTrigger) {
         android.util.Log.d("HomeScreen", "📱 Fetching data... trigger=$refreshTrigger")
         
@@ -141,6 +142,64 @@ fun HomeScreen(
                         status == EventStatus.ONGOING || status == EventStatus.UPCOMING
                     }
                     android.util.Log.d("HomeScreen", "🔢 Active events: $activeEventCount")
+                }
+                
+                // Fetch rapat/agenda yang aktif
+                val rapatResponse = ApiConfig.getApiService().getAllAgenda()
+                if (rapatResponse.isSuccessful && rapatResponse.body()?.success == true) {
+                    val allAgenda = rapatResponse.body()?.data ?: emptyList()
+                    android.util.Log.d("HomeScreen", "✅ Agenda fetched: ${allAgenda.size} agenda")
+                    
+                    // Filter rapat yang masih berlangsung (belum selesai/expired)
+                    // HANYA hitung yang: 1) waktu belum lewat DAN 2) isDone = false
+                    activeRapatCount = allAgenda.count { agenda ->
+                        // Skip jika sudah selesai (isDone = true)
+                        if (agenda.isDone) {
+                            android.util.Log.d("HomeScreen", "⏭️ Skipped (done): ${agenda.title}")
+                            return@count false
+                        }
+                        
+                        try {
+                            val currentTime = java.util.Calendar.getInstance()
+                            
+                            // Parse endTimeDisplay (format: "HH:mm WIB")
+                            val endParts = agenda.endTimeDisplay.replace(" WIB", "").split(":")
+                            val endHour = endParts[0].toInt()
+                            val endMinute = endParts[1].toInt()
+
+                            // Parse date (format: "YYYY-MM-DD")
+                            val dateParts = agenda.date.split("-")
+                            val year = dateParts[0].toInt()
+                            val month = dateParts[1].toInt() - 1 // Calendar month is 0-based
+                            val day = dateParts[2].toInt()
+
+                            val agendaEndTime = java.util.Calendar.getInstance().apply {
+                                set(java.util.Calendar.YEAR, year)
+                                set(java.util.Calendar.MONTH, month)
+                                set(java.util.Calendar.DAY_OF_MONTH, day)
+                                set(java.util.Calendar.HOUR_OF_DAY, endHour)
+                                set(java.util.Calendar.MINUTE, endMinute)
+                                set(java.util.Calendar.SECOND, 0)
+                                set(java.util.Calendar.MILLISECOND, 0)
+                            }
+
+                            // Rapat aktif jika waktu belum lewat
+                            val isActive = currentTime.before(agendaEndTime) || currentTime == agendaEndTime
+                            
+                            if (isActive) {
+                                android.util.Log.d("HomeScreen", "✓ Active: ${agenda.title} - ends at $year-${month+1}-$day $endHour:$endMinute")
+                            } else {
+                                android.util.Log.d("HomeScreen", "⏭️ Skipped (expired): ${agenda.title}")
+                            }
+                            
+                            isActive
+                        } catch (e: Exception) {
+                            android.util.Log.e("HomeScreen", "❌ Error parsing agenda '${agenda.title}': ${e.message}")
+                            android.util.Log.e("HomeScreen", "   date=${agenda.date}, endTimeDisplay=${agenda.endTimeDisplay}")
+                            false
+                        }
+                    }
+                    android.util.Log.d("HomeScreen", "🔢 Active rapat: $activeRapatCount (isDone=false & not expired)")
                 }
                 
                 // Fetch notifications (latest 3)
@@ -295,8 +354,8 @@ fun HomeScreen(
                     modifier = Modifier.weight(1f)
                 )
                 SummaryCard(
-                    title = "Agenda Rapat",
-                    value = "Rapat Pleno 1",
+                    title = "Rapat Aktif",
+                    value = "$activeRapatCount Rapat",
                     icon = Icons.Default.EventNote,
                     bgColor = Color(0xFFD9D9D9),
                     iconBgColor = Color(0xFFC4C4C4),
@@ -307,7 +366,7 @@ fun HomeScreen(
             Spacer(Modifier.height(28.dp))
 
             Text(
-                "Aktivitas Terbaru",
+                "Menu Utama",
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp,
                 color = Color(0xFF2D3319)
@@ -315,27 +374,48 @@ fun HomeScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // Activity items - dari notifikasi API
-            if (recentNotifications.isEmpty()) {
-                ActivityItem(
-                    text = "Belum ada notifikasi terbaru",
-                    time = "baru saja",
-                    icon = Icons.Default.Campaign,
-                    bgColor = Color(0xFFFFFFFF),
-                    iconBgColor = Color(0xFFF5E8A0)
-                )
-            } else {
-                recentNotifications.forEach { notification ->
-                    ActivityItem(
-                        text = "Event Baru Telah Ditambahkan!",
-                        time = formatNotificationTime(notification.created_at),
-                        icon = Icons.Default.Campaign,
-                        bgColor = Color(0xFFFFFFFF),
-                        iconBgColor = Color(0xFFF5E8A0)
-                    )
-                    Spacer(Modifier.height(12.dp))
-                }
-            }
+            // Menu Items
+            MenuItemCard(
+                title = "Bayar Kas",
+                description = "Lihat histori dan bayar iuran kas",
+                icon = Icons.Default.AccountBalanceWallet,
+                iconBgColor = Color(0xFFDFF5E1),
+                iconColor = Color(0xFF4A5D23),
+                onClick = { navController.navigate("kas") }
+            )
+            
+            Spacer(Modifier.height(12.dp))
+            
+            MenuItemCard(
+                title = "Lihat Event",
+                description = "Daftar event dan kegiatan terbaru",
+                icon = Icons.Default.Campaign,
+                iconBgColor = Color(0xFFFFF4E6),
+                iconColor = Color(0xFFEA580C),
+                onClick = { navController.navigate("event") }
+            )
+            
+            Spacer(Modifier.height(12.dp))
+            
+            MenuItemCard(
+                title = "Lihat Agenda Rapat",
+                description = "Jadwal rapat dan absensi rapat",
+                icon = Icons.Default.EventNote,
+                iconBgColor = Color(0xFFFEE2E2),
+                iconColor = Color(0xFFDC2626),
+                onClick = { navController.navigate("rapat") }
+            )
+            
+            Spacer(Modifier.height(12.dp))
+            
+            MenuItemCard(
+                title = "Absen Piket",
+                description = "Lihat jadwal dan isi absen piket",
+                icon = Icons.Default.Assignment,
+                iconBgColor = Color(0xFFE0E7FF),
+                iconColor = Color(0xFF4F46E5),
+                onClick = { navController.navigate("piket") }
+            )
         }
     }
     MenuDrawer(
@@ -500,6 +580,75 @@ fun ActivityItem(
                 fontSize = 13.sp
             )
         }
+    }
+}
+
+@Composable
+fun MenuItemCard(
+    title: String,
+    description: String,
+    icon: ImageVector,
+    iconBgColor: Color,
+    iconColor: Color,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 4.dp,
+                shape = RoundedCornerShape(16.dp),
+                clip = false
+            )
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White)
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Icon with circular background
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(CircleShape)
+                .background(iconBgColor),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconColor,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+
+        // Text content
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                title,
+                color = Color(0xFF1F2937),
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                description,
+                color = Color(0xFF6B7280),
+                fontSize = 13.sp,
+                lineHeight = 18.sp
+            )
+        }
+
+        // Arrow icon
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = Color(0xFF9CA3AF),
+            modifier = Modifier.size(24.dp)
+        )
     }
 }
 

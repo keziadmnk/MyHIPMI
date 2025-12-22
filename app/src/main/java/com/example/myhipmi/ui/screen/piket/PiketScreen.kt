@@ -145,9 +145,7 @@ fun PiketScreen(navController: NavHostController) {
             topBar = {
                 MyHipmiTopBar(
                     title = "Jadwal Piket",
-                    onBackClick = { navController.popBackStack() },
-                    onMenuClick = { isMenuVisible = true },
-                    onNotificationClick = { navController.navigate("notifications") }
+                    onBackClick = { navController.popBackStack() }
                 )
             },
             bottomBar = {
@@ -229,7 +227,7 @@ fun PiketScreen(navController: NavHostController) {
                                     .padding(vertical = 24.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                CircularProgressIndicator(color = PrimaryGreen)
+                                CircularProgressIndicator(color = GreenPrimary)
                             }
                         }
                     } else if (riwayatPiket.isEmpty()) {
@@ -317,7 +315,7 @@ private fun PiketHariCard(
             if (isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
-                    color = PrimaryGreen
+                    color = GreenPrimary
                 )
             } else {
                 Text(
@@ -364,7 +362,7 @@ private fun TodayPiketCard(
             OutlinedButton(
                 onClick = onUploadClick,
                 shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, PrimaryGreen),
+                border = BorderStroke(1.dp, GreenPrimary),
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = SecondaryGreen,
                     contentColor = GreenDark
@@ -436,12 +434,12 @@ private fun StatusChip(text: String) {
             modifier = Modifier
                 .size(6.dp)
                 .clip(CircleShape)
-                .background(PrimaryGreen)
+                .background(GreenPrimary)
         )
         Spacer(Modifier.width(6.dp))
         Text(
             text = text,
-            color = PrimaryGreen,
+            color = GreenPrimary,
             style = MaterialTheme.typography.labelMedium
         )
     }

@@ -168,7 +168,7 @@ fun DeveloperCard(name: String, nim: String) {
                 modifier = Modifier
                     .size(56.dp)
                     .background(
-                        color = PrimaryGreen.copy(alpha = 0.2f),
+                        color = GreenPrimary.copy(alpha = 0.2f),
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -176,7 +176,7 @@ fun DeveloperCard(name: String, nim: String) {
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = name,
-                    tint = PrimaryGreen,
+                    tint = GreenPrimary,
                     modifier = Modifier.size(32.dp)
                 )
             }

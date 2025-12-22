@@ -1,19 +1,23 @@
 package com.example.myhipmi.ui.screen.rapat
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -29,6 +33,7 @@ import java.util.Date
 import java.util.Locale
 import com.example.myhipmi.data.local.UserSessionManager
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,7 +67,17 @@ fun AddRapatScreen(navController: NavHostController) {
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
 
-    val datePickerState = rememberDatePickerState()
+    // DatePicker dengan constraint tidak bisa pilih tanggal masa lalu
+    val currentTimeMillis = remember { System.currentTimeMillis() }
+    val datePickerState = rememberDatePickerState(
+        initialDisplayedMonthMillis = currentTimeMillis,
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                // Hanya izinkan tanggal hari ini atau masa depan
+                return utcTimeMillis >= currentTimeMillis - 86400000L // -1 hari untuk toleransi timezone
+            }
+        }
+    )
     val startTimePickerState = rememberTimePickerState()
     val endTimePickerState = rememberTimePickerState()
 
@@ -70,15 +85,21 @@ fun AddRapatScreen(navController: NavHostController) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // Animation state
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(100)
+        isVisible = true
+    }
+
     // Handle success/error messages
     LaunchedEffect(successMessage, errorMessage) {
         successMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.clearMessages()
-            // Navigate back to rapat and force refresh setelah sukses
+            // Langsung navigate - RapatScreen akan baca successMessage dari ViewModel
             navController.navigate("rapat") {
                 popUpTo("rapat") { inclusive = true }
             }
+            // JANGAN clear message di sini, biar RapatScreen yang baca dulu
         }
         errorMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -100,136 +121,253 @@ fun AddRapatScreen(navController: NavHostController) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(White)
+                .background(Color(0xFFFFFFFF))
                 .padding(innerPadding)
                 .padding(horizontal = 20.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
+            contentPadding = PaddingValues(vertical = 16.dp)
         ) {
+            // Header
             item {
-                Text(
-                    text = "Agenda Rapat Baru",
-                    fontSize = 24.sp,
-                    color = GreenPrimary,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentSize(Alignment.Center)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            // Input Fields
-            item { RapatTextField("Nama Rapat", namaRapat) { namaRapat = it } }
-
-            // Tanggal dengan DatePicker
-            item {
-                RapatClickableField(
-                    label = "Tanggal",
-                    value = tanggal,
-                    icon = Icons.Default.CalendarToday,
-                    onClick = { showDatePicker = true }
-                )
-            }
-
-            // Jam Mulai dengan TimePicker
-            item {
-                RapatClickableField(
-                    label = "Jam Mulai",
-                    value = startTime,
-                    icon = Icons.Default.AccessTime,
-                    onClick = { showStartTimePicker = true }
-                )
-            }
-
-            // Jam Selesai dengan TimePicker
-            item {
-                RapatClickableField(
-                    label = "Jam Selesai",
-                    value = endTime,
-                    icon = Icons.Default.AccessTime,
-                    onClick = { showEndTimePicker = true }
-                )
-            }
-
-            item { RapatTextField("Lokasi", lokasi) { lokasi = it } }
-            item { RapatTextField("Deskripsi", deskripsi) { deskripsi = it } }
-
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = fadeIn() + slideInVertically(initialOffsetY = { -20 })
                 ) {
-                    Button(
-                        onClick = {
-                            // Validasi input
-                            if (namaRapat.isBlank()) {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Nama rapat harus diisi")
-                                }
-                                return@Button
-                            }
-                            if (tanggal.isBlank()) {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Tanggal harus dipilih")
-                                }
-                                return@Button
-                            }
-                            if (startTime.isBlank()) {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Jam mulai harus dipilih")
-                                }
-                                return@Button
-                            }
-                            if (endTime.isBlank()) {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Jam selesai harus dipilih")
-                                }
-                                return@Button
-                            }
-                            if (lokasi.isBlank()) {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Lokasi harus diisi")
-                                }
-                                return@Button
-                            }
+                    Column {
+                        Text(
+                            text = "Agenda Rapat Baru",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1F2937),
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        Text(
+                            text = "Lengkapi informasi rapat di bawah ini",
+                            fontSize = 14.sp,
+                            color = Color(0xFF6B7280)
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
+                }
+            }
 
-                            // Pastikan user sudah login
-                            if (loggedInUserId == null) {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Anda belum login. Silakan login terlebih dahulu.")
-                                }
-                                navController.navigate("login")
-                                return@Button
-                            }
-
-                            // Simpan data rapat baru ke backend
-                            viewModel.createAgenda(
-                                idPengurus = loggedInUserId,
-                                title = namaRapat,
-                                creatorId = loggedInUserId,
-                                creatorName = loggedInUserName ?: "",
-                                dateDisplay = tanggal,
-                                dateSelectedMillis = dateSelectedMillis,
-                                startTimeDisplay = startTime,
-                                endTimeDisplay = endTime,
-                                location = lokasi,
-                                description = deskripsi
+            // Error Message
+            item {
+                AnimatedVisibility(
+                    visible = !errorMessage.isNullOrBlank(),
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .background(
+                                color = Color(0xFFFEE2E2),
+                                shape = RoundedCornerShape(8.dp)
                             )
-
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
-                        shape = RoundedCornerShape(12.dp),
-                        enabled = !isLoading
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = White,
-                                strokeWidth = 2.dp
+                        Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = null,
+                            tint = Color(0xFFDC2626),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = errorMessage ?: "",
+                            color = Color(0xFFDC2626),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+
+            // Success Message dihapus - langsung navigate (no duplicate)
+
+            // Input Fields with animation
+            item {
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = fadeIn(animationSpec = tween(400, delayMillis = 100)) +
+                            slideInVertically(initialOffsetY = { 30 })
+                ) {
+                    Column {
+                        ModernTextField(
+                            label = "Nama Rapat",
+                            value = namaRapat,
+                            onValueChange = { namaRapat = it },
+                            icon = Icons.Default.Event,
+                            isRequired = true
+                        )
+                        ModernTextField(
+                            label = "Tanggal",
+                            value = if (tanggal.isNotBlank()) tanggal else "Pilih Tanggal",
+                            onValueChange = { },
+                            icon = Icons.Default.CalendarMonth,
+                            readOnly = true,
+                            onClick = { showDatePicker = true },
+                            isRequired = true
+                        )
+                        ModernTextField(
+                            label = "Jam Mulai",
+                            value = if (startTime.isNotBlank()) startTime else "Pilih Jam Mulai",
+                            onValueChange = { },
+                            icon = Icons.Default.AccessTime,
+                            readOnly = true,
+                            onClick = { showStartTimePicker = true },
+                            isRequired = true
+                        )
+                        ModernTextField(
+                            label = "Jam Selesai",
+                            value = if (endTime.isNotBlank()) endTime else "Pilih Jam Selesai",
+                            onValueChange = { },
+                            icon = Icons.Default.AccessTime,
+                            readOnly = true,
+                            onClick = { showEndTimePicker = true },
+                            isRequired = true
+                        )
+                        ModernTextField(
+                            label = "Lokasi",
+                            value = lokasi,
+                            onValueChange = { lokasi = it },
+                            icon = Icons.Default.LocationOn,
+                            isRequired = true
+                        )
+                        ModernTextField(
+                            label = "Deskripsi",
+                            value = deskripsi,
+                            onValueChange = { deskripsi = it },
+                            icon = Icons.Default.Description,
+                            singleLine = false,
+                            minLines = 3
+                        )
+                    }
+                }
+            }
+
+            // Tombol "Batal" dan "Buat"
+            item {
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = fadeIn(animationSpec = tween(400, delayMillis = 200)) +
+                            slideInVertically(initialOffsetY = { 30 })
+                ) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { navController.popBackStack() },
+                            enabled = !isLoading,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(52.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = GreenPrimary
+                            ),
+                            border = ButtonDefaults.outlinedButtonBorder.copy(
+                                width = 1.5.dp
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                        ) {
+                            Text(
+                                text = "Batal",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
                         }
-                        Text(text = "Buat", color = White)
+
+                        Button(
+                            onClick = {
+                                // Validasi input
+                                if (namaRapat.isBlank()) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Nama rapat harus diisi")
+                                    }
+                                    return@Button
+                                }
+                                if (tanggal.isBlank()) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Tanggal harus dipilih")
+                                    }
+                                    return@Button
+                                }
+                                if (startTime.isBlank()) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Jam mulai harus dipilih")
+                                    }
+                                    return@Button
+                                }
+                                if (endTime.isBlank()) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Jam selesai harus dipilih")
+                                    }
+                                    return@Button
+                                }
+                                if (lokasi.isBlank()) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Lokasi harus diisi")
+                                    }
+                                    return@Button
+                                }
+
+                                // Pastikan user sudah login
+                                if (loggedInUserId == null) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Anda belum login. Silakan login terlebih dahulu.")
+                                    }
+                                    navController.navigate("login")
+                                    return@Button
+                                }
+
+                                // Simpan data rapat baru ke backend
+                                viewModel.createAgenda(
+                                    idPengurus = loggedInUserId,
+                                    title = namaRapat,
+                                    creatorId = loggedInUserId,
+                                    creatorName = loggedInUserName ?: "",
+                                    dateDisplay = tanggal,
+                                    dateSelectedMillis = dateSelectedMillis,
+                                    startTimeDisplay = startTime,
+                                    endTimeDisplay = endTime,
+                                    location = lokasi,
+                                    description = deskripsi
+                                )
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(52.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = GreenPrimary
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            enabled = !isLoading
+                        ) {
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    color = White,
+                                    strokeWidth = 2.dp,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Buat Rapat",
+                                    color = White,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -314,6 +452,25 @@ fun AddRapatScreen(navController: NavHostController) {
                         onClick = {
                             val hour = endTimePickerState.hour
                             val minute = endTimePickerState.minute
+                            
+                            // Validasi: waktu selesai tidak boleh kurang dari waktu mulai
+                            if (startTime.isNotBlank()) {
+                                val startParts = startTime.replace(" WIB", "").split(":")
+                                val startHour = startParts[0].toInt()
+                                val startMinute = startParts[1].toInt()
+                                
+                                val startTotalMinutes = startHour * 60 + startMinute
+                                val endTotalMinutes = hour * 60 + minute
+                                
+                                if (endTotalMinutes <= startTotalMinutes) {
+                                    showEndTimePicker = false // Tutup dialog dulu
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Jam selesai harus lebih dari jam mulai")
+                                    }
+                                    return@TextButton
+                                }
+                            }
+                            
                             endTime = String.format(Locale.forLanguageTag("id-ID"), "%02d:%02d WIB", hour, minute)
                             showEndTimePicker = false
                         }
@@ -362,103 +519,4 @@ fun AddRapatScreen(navController: NavHostController) {
             }
         )
     }
-}
-
-@Composable
-fun RapatTextField(label: String, value: String, onValueChange: (String) -> Unit) {
-    Surface(
-        shape = RoundedCornerShape(10.dp),
-        shadowElevation = 4.dp,
-        color = GreenMain,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp)
-    ) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            label = { Text(text = label, color = Color(0xFFB0B0B0)) },
-            singleLine = label != "Deskripsi",
-            shape = RoundedCornerShape(10.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Transparent,
-                unfocusedBorderColor = Color.Transparent,
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                cursorColor = GreenPrimary
-            )
-        )
-    }
-}
-
-@Composable
-fun RapatClickableField(
-    label: String,
-    value: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit
-) {
-    Surface(
-        shape = RoundedCornerShape(10.dp),
-        shadowElevation = 4.dp,
-        color = GreenMain,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .clickable(onClick = onClick)
-    ) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {},
-            label = { Text(text = label, color = Color(0xFFB0B0B0)) },
-            readOnly = true,
-            enabled = false,
-            trailingIcon = {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = GreenPrimary
-                )
-            },
-            shape = RoundedCornerShape(10.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-                .clickable(onClick = onClick),
-            colors = OutlinedTextFieldDefaults.colors(
-                disabledTextColor = Color.Black,
-                disabledBorderColor = Color.Transparent,
-                disabledLabelColor = Color(0xFFB0B0B0),
-                disabledContainerColor = Color.Transparent,
-                disabledTrailingIconColor = GreenPrimary
-            )
-        )
-    }
-}
-
-@Composable
-fun TimePickerDialog(
-    onDismissRequest: () -> Unit,
-    confirmButton: @Composable () -> Unit,
-    dismissButton: @Composable () -> Unit,
-    content: @Composable () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        confirmButton = confirmButton,
-        dismissButton = dismissButton,
-        text = {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                content()
-            }
-        },
-        containerColor = White,
-        shape = RoundedCornerShape(24.dp)
-    )
 }

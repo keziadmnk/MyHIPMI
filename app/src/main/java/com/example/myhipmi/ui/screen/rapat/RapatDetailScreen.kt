@@ -17,6 +17,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -42,6 +44,85 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 
+
+@Composable
+fun ModernInfoRow(icon: ImageVector, label: String, value: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(GreenPrimary.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = GreenPrimary,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                fontSize = 12.sp,
+                color = Color(0xFF9CA3AF),
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = value,
+                fontSize = 15.sp,
+                color = Color(0xFF1F2937),
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun TimeScheduleRow(icon: ImageVector, label: String, value: String) {
+    Row(
+        verticalAlignment = Alignment.Top,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFFEF4444).copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color(0xFFEF4444),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(14.dp))
+        Column {
+            Text(
+                text = label,
+                fontSize = 12.sp,
+                color = Color(0xFF9CA3AF),
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = value,
+                fontSize = 15.sp,
+                color = Color(0xFF1F2937),
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+    }
+}
+
 @Composable
 fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackStackEntry) {
     val viewModel: RapatViewModel = viewModel()
@@ -63,13 +144,10 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var isMenuVisible by remember { mutableStateOf(false) }
     var photoFile by remember { mutableStateOf<File?>(null) }
-
-    // State untuk menyimpan data absen dari API
     var absenTimestamp by remember { mutableStateOf<String?>(null) }
     var absenPhotoUrl by remember { mutableStateOf<String?>(null) }
     var isLoadingAbsen by remember { mutableStateOf(false) }
-    
-    // Debug: Log semua parameter penting saat screen dibuka
+
     LaunchedEffect(Unit) {
         android.util.Log.d("RapatDetailScreen", "=== SCREEN OPENED ===")
         android.util.Log.d("RapatDetailScreen", "idAgenda: $idAgenda")
@@ -78,7 +156,6 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
         android.util.Log.d("RapatDetailScreen", "title: $title")
     }
 
-    // Ambil timestamp absen dari local storage jika ada
     LaunchedEffect(idAgenda) {
         val savedTimestamp = sessionManager.getAbsenTimestamp(idAgenda)
         android.util.Log.d("RapatDetailScreen", "Checking SharedPreferences for agenda $idAgenda: $savedTimestamp")
@@ -90,7 +167,6 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
         }
     }
 
-    // Ambil data absen dari API - SELALU coba ambil jika user sudah absen
     LaunchedEffect(idAgenda, loggedInUserId) {
         android.util.Log.d("RapatDetailScreen", "========================================")
         android.util.Log.d("RapatDetailScreen", "LaunchedEffect triggered")
@@ -98,31 +174,29 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
         android.util.Log.d("RapatDetailScreen", "- loggedInUserId: $loggedInUserId")
         android.util.Log.d("RapatDetailScreen", "- isDone: $isDone")
         android.util.Log.d("RapatDetailScreen", "========================================")
-        
+
         if (loggedInUserId != null && idAgenda > 0) {
             isLoadingAbsen = true
             try {
                 android.util.Log.d("RapatDetailScreen", "🌐 Calling API: getAbsenByAgenda($idAgenda)")
-                
-                // Panggil API untuk mendapatkan absen berdasarkan agenda
+
                 val response = viewModel.apiService.getAbsenByAgenda(idAgenda)
-                
+
                 android.util.Log.d("RapatDetailScreen", "📡 API Response:")
                 android.util.Log.d("RapatDetailScreen", "  - isSuccessful: ${response.isSuccessful}")
                 android.util.Log.d("RapatDetailScreen", "  - code: ${response.code()}")
                 android.util.Log.d("RapatDetailScreen", "  - message: ${response.message()}")
-                
+
                 if (response.isSuccessful) {
                     val responseBody = response.body()
                     android.util.Log.d("RapatDetailScreen", "  - body success: ${responseBody?.success}")
                     android.util.Log.d("RapatDetailScreen", "  - body data size: ${responseBody?.data?.size}")
-                    
+
                     if (responseBody?.success == true) {
                         val absenList = responseBody.data
                         android.util.Log.d("RapatDetailScreen", "✓ Received ${absenList.size} absen records")
                         android.util.Log.d("RapatDetailScreen", "🔍 Looking for idPengurus: $loggedInUserId")
-                        
-                        // Debug: Print SEMUA absen dalam list dengan detail lengkap
+
                         absenList.forEachIndexed { index, absen ->
                             android.util.Log.d("RapatDetailScreen", "📋 Absen #${index + 1}:")
                             android.util.Log.d("RapatDetailScreen", "   - id_absenRapat: ${absen.idAbsenRapat}")
@@ -133,22 +207,20 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
                             android.util.Log.d("RapatDetailScreen", "   - status: ${absen.status}")
                             android.util.Log.d("RapatDetailScreen", "   - Match? ${absen.idPengurus == loggedInUserId}")
                         }
-                        
-                        // Cari absen dari user yang sedang login
+
                         val userAbsen = absenList.find { absen ->
                             absen.idPengurus == loggedInUserId
                         }
-                        
+
                         if (userAbsen != null) {
                             val timestamp = userAbsen.timestamp
                             val photoUrl = userAbsen.photobuktiUrl
-                            
+
                             absenTimestamp = timestamp
                             absenPhotoUrl = photoUrl
-                            
-                            // Simpan ke local storage juga
+
                             sessionManager.saveAbsenTimestamp(idAgenda, timestamp)
-                            
+
                             android.util.Log.d("RapatDetailScreen", "✅✅✅ SUCCESS! ✅✅✅")
                             android.util.Log.d("RapatDetailScreen", "Found absen for idPengurus: $loggedInUserId")
                             android.util.Log.d("RapatDetailScreen", "Timestamp: '$timestamp'")
@@ -185,7 +257,6 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
         }
     }
 
-    // Launcher untuk mengambil foto - deklarasi ini harus di atas
     val takePictureLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { isSuccess ->
@@ -206,7 +277,6 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
         }
     }
 
-    // Permission launcher untuk kamera
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -225,8 +295,8 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
         }
     }
 
-    // Fungsi untuk validasi waktu absen
-    fun isValidAbsenTime(): Boolean {
+    // Status: 0 = Belum dimulai, 1 = Sedang berlangsung, 2 = Sudah terlewat
+    fun checkAbsenTimeStatus(): Int {
         try {
             val currentTime = Calendar.getInstance()
             val currentYear = currentTime.get(Calendar.YEAR)
@@ -257,11 +327,11 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
             }
 
             val isSameDate = (currentYear == agendaYear) &&
-                           (currentMonth == agendaMonth) &&
-                           (currentDay == agendaDay)
+                    (currentMonth == agendaMonth) &&
+                    (currentDay == agendaDay)
 
             if (!isSameDate) {
-                return false
+                return 2 // Beda tanggal = sudah terlewat
             }
 
             val startParts = startTime.replace(" WIB", "").split(":")
@@ -276,14 +346,19 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
             val startTotalMinutes = startHour * 60 + startMinute
             val endTotalMinutes = endHour * 60 + endMinute
 
-            return currentTotalMinutes in startTotalMinutes..endTotalMinutes
+            return when {
+                currentTotalMinutes < startTotalMinutes -> 0 // Belum dimulai
+                currentTotalMinutes > endTotalMinutes -> 2 // Sudah terlewat
+                else -> 1 // Sedang berlangsung
+            }
         } catch (e: Exception) {
-            android.util.Log.e("RapatDetailScreen", "Error validating absen time: ${e.message}", e)
-            return false
+            android.util.Log.e("RapatDetailScreen", "Error checking absen time status: ${e.message}", e)
+            return 2 // Default: sudah terlewat
         }
     }
+    
+    fun isValidAbsenTime(): Boolean = checkAbsenTimeStatus() == 1
 
-    // Handle viewModel messages
     val vmError by viewModel.errorMessage.collectAsState()
     val vmSuccess by viewModel.successMessage.collectAsState()
     LaunchedEffect(vmError, vmSuccess) {
@@ -308,8 +383,7 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
             topBar = {
                 MyHipmiTopBar(
                     title = "Detail Rapat",
-                    onBackClick = { navController.popBackStack() },
-                    onMenuClick = { isMenuVisible = true }
+                    onBackClick = { navController.popBackStack() }
                 )
             },
             snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -318,20 +392,79 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
                 modifier = Modifier
                     .padding(innerPadding)
                     .fillMaxSize()
-                    .background(White)
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                    .background(Color(0xFFF8F9FA))
+                    .padding(20.dp)
             ) {
-                Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(4.dp, RoundedCornerShape(20.dp)),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(
+                                        Brush.linearGradient(
+                                            colors = listOf(
+                                                GreenPrimary.copy(alpha = 0.15f),
+                                                GreenPrimary.copy(alpha = 0.05f)
+                                            )
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.EventNote,
+                                    contentDescription = null,
+                                    tint = GreenPrimary,
+                                    modifier = Modifier.size(30.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Informasi Rapat",
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF6B7280),
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = title,
+                                    fontSize = 19.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1F2937),
+                                    lineHeight = 26.sp
+                                )
+                            }
+                        }
 
-                RapatDetailInfoRow(Icons.Default.DateRange, date, PrimaryGreen)
-                RapatDetailInfoRow(Icons.Default.Schedule, "$startTime - $endTime", PrimaryGreen)
-                RapatDetailInfoRow(Icons.Default.Place, location, PrimaryGreen)
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        ModernInfoRow(Icons.Default.DateRange, "Tanggal", date)
+                        Spacer(modifier = Modifier.height(14.dp))
+                        ModernInfoRow(Icons.Default.Schedule, "Waktu", "$startTime - $endTime")
+                        Spacer(modifier = Modifier.height(14.dp))
+                        ModernInfoRow(Icons.Default.Place, "Lokasi", location)
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
                 if (isDone) {
-                    // Fungsi untuk format timestamp absen
                     fun formatAbsenTimestamp(timestamp: String?): String {
                         android.util.Log.d("RapatDetailScreen", "formatAbsenTimestamp called with: '$timestamp'")
                         return try {
@@ -339,19 +472,14 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
                                 android.util.Log.w("RapatDetailScreen", "Timestamp is null or blank")
                                 return "waktu tidak tersedia"
                             }
-                            
-                            // Coba parse dengan berbagai format timestamp
+
                             val date = try {
-                                // Format 1: ISO 8601 UTC (dari backend Node.js/Sequelize)
-                                // Contoh: "2025-12-05T05:28:19.000Z"
                                 android.util.Log.d("RapatDetailScreen", "Trying ISO 8601 format...")
                                 val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
                                 isoFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
                                 isoFormat.parse(timestamp)
                             } catch (e: Exception) {
                                 try {
-                                    // Format 2: MySQL datetime format
-                                    // Contoh: "2025-12-05 12:28:19"
                                     android.util.Log.d("RapatDetailScreen", "Trying MySQL format...")
                                     val mysqlFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                                     mysqlFormat.parse(timestamp)
@@ -360,25 +488,23 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
                                     null
                                 }
                             }
-                            
+
                             android.util.Log.d("RapatDetailScreen", "Parsed date: $date")
-                            
+
                             if (date != null) {
-                                // Konversi ke WIB (GMT+7)
                                 val wibFormat = java.util.Calendar.getInstance()
                                 wibFormat.time = date
-                                
+
                                 val outputDateFormat = SimpleDateFormat("dd MMMM yyyy", Locale("id", "ID"))
                                 val outputTimeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-                                
-                                // Set timezone ke WIB untuk output
+
                                 outputDateFormat.timeZone = java.util.TimeZone.getTimeZone("Asia/Jakarta")
                                 outputTimeFormat.timeZone = java.util.TimeZone.getTimeZone("Asia/Jakarta")
-                                
+
                                 val formattedDate = outputDateFormat.format(date)
                                 val formattedTime = outputTimeFormat.format(date)
                                 val result = "$formattedDate pukul $formattedTime WIB"
-                                
+
                                 android.util.Log.d("RapatDetailScreen", "✓ Formatted result: $result")
                                 result
                             } else {
@@ -391,311 +517,510 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
                         }
                     }
 
-                    // Tampilkan pesan dengan loading state atau timestamp sebenarnya
                     android.util.Log.d("RapatDetailScreen", "🎨 Rendering absen UI:")
                     android.util.Log.d("RapatDetailScreen", "   - isLoadingAbsen: $isLoadingAbsen")
                     android.util.Log.d("RapatDetailScreen", "   - absenTimestamp: '$absenTimestamp'")
                     android.util.Log.d("RapatDetailScreen", "   - isDone: $isDone")
-                    
-                    if (isLoadingAbsen) {
-                        Text(
-                            text = "Memuat data absensi...",
-                            color = PrimaryGreen,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        android.util.Log.d("RapatDetailScreen", "📱 Showing: 'Memuat data absensi...'")
-                    } else {
-                        val absenTimeText = formatAbsenTimestamp(absenTimestamp)
-                        android.util.Log.d("RapatDetailScreen", "📱 Formatted time text: '$absenTimeText'")
-                        
-                        Text(
-                            text = "Anda telah mengisi absen pada $absenTimeText.",
-                            color = PrimaryGreen,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        android.util.Log.d("RapatDetailScreen", "📱 Displayed: 'Anda telah mengisi absen pada $absenTimeText.'")
-                    }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    // Tampilkan foto bukti absen
-                    val photoToDisplay = when {
-                        absenPhotoUrl != null && absenPhotoUrl!!.isNotBlank() -> {
-                            android.util.Log.d("RapatDetailScreen", "📷 Displaying photo from API: $absenPhotoUrl")
-                            absenPhotoUrl
-                        }
-                        imageUri != null -> {
-                            android.util.Log.d("RapatDetailScreen", "📷 Displaying photo from local URI: $imageUri")
-                            imageUri.toString()
-                        }
-                        else -> {
-                            android.util.Log.d("RapatDetailScreen", "📷 No photo available, showing placeholder")
-                            "https://via.placeholder.com/600x300.png?text=Foto+Rapat"
-                        }
-                    }
-                    
-                    AsyncImage(
-                        model = photoToDisplay,
-                        contentDescription = "Foto Bukti Absen",
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .border(1.dp, BorderLight, RoundedCornerShape(12.dp)),
-                        contentScale = ContentScale.Crop,
-                        error = androidx.compose.ui.res.painterResource(android.R.drawable.ic_menu_gallery),
-                        placeholder = androidx.compose.ui.res.painterResource(android.R.drawable.ic_menu_gallery)
-                    )
+                            .shadow(6.dp, RoundedCornerShape(20.dp)),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(
+                                            Brush.linearGradient(
+                                                colors = listOf(
+                                                    Color(0xFF10B981),
+                                                    Color(0xFF059669)
+                                                )
+                                            )
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Absensi Berhasil",
+                                        fontSize = 19.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF1F2937)
+                                    )
+                                    if (isLoadingAbsen) {
+                                        Text(
+                                            text = "Memuat data...",
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF6B7280),
+                                            modifier = Modifier.padding(top = 2.dp)
+                                        )
+                                    } else {
+                                        val absenTimeText = formatAbsenTimestamp(absenTimestamp)
+                                        Text(
+                                            text = absenTimeText,
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF6B7280),
+                                            modifier = Modifier.padding(top = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            val photoToDisplay = when {
+                                absenPhotoUrl != null && absenPhotoUrl!!.isNotBlank() -> {
+                                    android.util.Log.d("RapatDetailScreen", "📷 Displaying photo from API: $absenPhotoUrl")
+                                    absenPhotoUrl
+                                }
+                                imageUri != null -> {
+                                    android.util.Log.d("RapatDetailScreen", "📷 Displaying photo from local URI: $imageUri")
+                                    imageUri.toString()
+                                }
+                                else -> {
+                                    android.util.Log.d("RapatDetailScreen", "📷 No photo available, showing placeholder")
+                                    "https://via.placeholder.com/600x300.png?text=Foto+Rapat"
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(240.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .border(
+                                        width = 2.dp,
+                                        color = Color(0xFFE5E7EB),
+                                        shape = RoundedCornerShape(16.dp)
+                                    )
+                            ) {
+                                AsyncImage(
+                                    model = photoToDisplay,
+                                    contentDescription = "Foto Bukti Absen",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop,
+                                    error = androidx.compose.ui.res.painterResource(android.R.drawable.ic_menu_gallery),
+                                    placeholder = androidx.compose.ui.res.painterResource(android.R.drawable.ic_menu_gallery)
+                                )
+
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(12.dp)
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(Color(0xFF10B981))
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 } else {
-                    val isValidTime = isValidAbsenTime()
+                    val absenTimeStatus = checkAbsenTimeStatus()
                     val currentTime = Calendar.getInstance()
                     val currentTimeString = String.format(Locale.getDefault(), "%02d:%02d",
                         currentTime.get(Calendar.HOUR_OF_DAY),
                         currentTime.get(Calendar.MINUTE))
 
-                    if (!isValidTime) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = RedPrimary.copy(alpha = 0.08f)
-                            ),
-                            shape = RoundedCornerShape(16.dp),
-                            border = BorderStroke(1.5.dp, RedPrimary.copy(alpha = 0.25f)),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(20.dp),
-                                horizontalAlignment = Alignment.Start
+                    when (absenTimeStatus) {
+                        0 -> { // Belum dimulai
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .shadow(6.dp, RoundedCornerShape(20.dp)),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(20.dp)
                             ) {
-                                // Header dengan icon
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(48.dp)
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .background(RedPrimary.copy(alpha = 0.15f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Schedule,
-                                            contentDescription = null,
-                                            tint = RedPrimary,
-                                            modifier = Modifier.size(28.dp)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = "Absensi Tidak Tersedia",
-                                            fontSize = 17.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = RedPrimary,
-                                            lineHeight = 22.sp
-                                        )
-                                        Text(
-                                            text = "Waktu absensi telah terlewat",
-                                            fontSize = 13.sp,
-                                            color = TextSecondary,
-                                            modifier = Modifier.padding(top = 2.dp)
-                                        )
-                                    }
-                                }
-                                
-                                Spacer(modifier = Modifier.height(16.dp))
-                                
-                                // Divider
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(1.dp)
-                                        .background(RedPrimary.copy(alpha = 0.15f))
-                                )
-                                
-                                Spacer(modifier = Modifier.height(16.dp))
-                                
-                                // Informasi waktu yang diperbolehkan
-                                Text(
-                                    text = "Absensi hanya dapat diisi pada:",
-                                    fontSize = 13.sp,
-                                    color = TextSecondary,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                
-                                Spacer(modifier = Modifier.height(12.dp))
-                                
-                                // Info tanggal
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.DateRange,
-                                        contentDescription = null,
-                                        tint = RedPrimary.copy(alpha = 0.7f),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Column {
-                                        Text(
-                                            text = "Tanggal",
-                                            fontSize = 12.sp,
-                                            color = TextSecondary
-                                        )
-                                        Text(
-                                            text = date,
-                                            fontSize = 14.sp,
-                                            color = TextPrimary,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                    }
-                                }
-                                
-                                // Info waktu
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Schedule,
-                                        contentDescription = null,
-                                        tint = RedPrimary.copy(alpha = 0.7f),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Column {
-                                        Text(
-                                            text = "Waktu Absensi",
-                                            fontSize = 12.sp,
-                                            color = TextSecondary
-                                        )
-                                        Text(
-                                            text = "$startTime - $endTime WIB",
-                                            fontSize = 14.sp,
-                                            color = TextPrimary,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                    }
-                                }
-                                
-                                Spacer(modifier = Modifier.height(16.dp))
-                                
-                                // Footer dengan waktu sekarang
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(RedPrimary.copy(alpha = 0.08f))
-                                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                                Column(
+                                    modifier = Modifier.padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center,
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Info,
-                                            contentDescription = null,
-                                            tint = RedPrimary,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = "Waktu sekarang: ",
-                                            fontSize = 12.sp,
-                                            color = TextSecondary
-                                        )
-                                        Text(
-                                            text = "$currentTimeString WIB",
-                                            fontSize = 12.sp,
-                                            color = RedPrimary,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .size(56.dp)
+                                                .clip(RoundedCornerShape(14.dp))
+                                                .background(
+                                                    Brush.linearGradient(
+                                                        colors = listOf(
+                                                            Color(0xFFFBBF24),
+                                                            Color(0xFFF59E0B)
+                                                        )
+                                                    )
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Schedule,
+                                                contentDescription = null,
+                                                tint = Color.White,
+                                                modifier = Modifier.size(30.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "Absensi Belum Dimulai",
+                                                fontSize = 19.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF1F2937),
+                                                lineHeight = 26.sp
+                                            )
+                                            Text(
+                                                text = "Waktu absensi belum dimulai",
+                                                fontSize = 13.sp,
+                                                color = Color(0xFF6B7280),
+                                                modifier = Modifier.padding(top = 2.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(20.dp))
+
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(Color(0xFFFEF3C7))
+                                            .border(
+                                                width = 1.dp,
+                                                color = Color(0xFFFBBF24).copy(alpha = 0.2f),
+                                                shape = RoundedCornerShape(12.dp)
+                                            )
+                                            .padding(16.dp)
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Info,
+                                                contentDescription = null,
+                                                tint = Color(0xFFF59E0B),
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Text(
+                                                text = "Mohon Tunggu",
+                                                fontSize = 14.sp,
+                                                color = Color(0xFF1F2937),
+                                                fontWeight = FontWeight.SemiBold,
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = "Absensi dapat diisi mulai pukul $startTime",
+                                                fontSize = 13.sp,
+                                                color = Color(0xFF6B7280),
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                                lineHeight = 18.sp
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
-                    } else {
-                        Text("Silakan ambil foto selama rapat berlangsung.", fontSize = 14.sp)
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        if (imageUri == null) {
-                            Button(
-                                onClick = {
-                                    if (isValidAbsenTime()) {
-                                        try {
-                                            val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-                                            val fileName = "HIPMI_ABSEN_${timeStamp}.jpg"
-
-                                            val picturesDir = File(context.getExternalFilesDir(null), "Pictures")
-                                            if (!picturesDir.exists()) {
-                                                picturesDir.mkdirs()
-                                            }
-
-                                            photoFile = File(picturesDir, fileName)
-                                            android.util.Log.d("RapatDetailScreen", "Photo file created: ${photoFile?.absolutePath}")
-
-                                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                                        } catch (e: Exception) {
-                                            android.util.Log.e("RapatDetailScreen", "Error creating photo file: ${e.message}", e)
-                                            coroutineScope.launch {
-                                                snackbarHostState.showSnackbar("Gagal menyiapkan file foto. Silakan coba lagi.")
-                                            }
+                        2 -> { // Sudah terlewat
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .shadow(6.dp, RoundedCornerShape(20.dp)),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(20.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(56.dp)
+                                                .clip(RoundedCornerShape(14.dp))
+                                                .background(
+                                                    Brush.linearGradient(
+                                                        colors = listOf(
+                                                            Color(0xFFEF4444),
+                                                            Color(0xFFDC2626)
+                                                        )
+                                                    )
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.EventBusy,
+                                                contentDescription = null,
+                                                tint = Color.White,
+                                                modifier = Modifier.size(30.dp)
+                                            )
                                         }
-                                    } else {
-                                        coroutineScope.launch {
-                                            snackbarHostState.showSnackbar("Waktu absensi sudah tidak valid. Silakan refresh halaman.")
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "Absensi Ditutup",
+                                                fontSize = 19.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF1F2937),
+                                                lineHeight = 26.sp
+                                            )
+                                            Text(
+                                                text = "karena tidak berada pada waktu yang ditentukan",
+                                                fontSize = 13.sp,
+                                                color = Color(0xFF6B7280),
+                                                modifier = Modifier.padding(top = 2.dp)
+                                            )
                                         }
                                     }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(Icons.Default.CameraAlt, contentDescription = null)
-                                Spacer(Modifier.width(8.dp))
-                                Text("Ambil Foto Absensi", fontSize = 16.sp)
-                            }
-                        } else {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                            ) {
-                                Column {
-                                    AsyncImage(
-                                        model = imageUri,
-                                        contentDescription = "Preview Foto Absensi",
+
+                                    Spacer(modifier = Modifier.height(20.dp))
+
+                                    Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(200.dp),
-                                        contentScale = ContentScale.Crop
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(Color(0xFFFEF2F2))
+                                            .border(
+                                                width = 1.dp,
+                                                color = Color(0xFFEF4444).copy(alpha = 0.2f),
+                                                shape = RoundedCornerShape(12.dp)
+                                            )
+                                            .padding(16.dp)
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Info,
+                                                contentDescription = null,
+                                                tint = Color(0xFFEF4444),
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Text(
+                                                text = "Anda belum mengisi absen",
+                                                fontSize = 14.sp,
+                                                color = Color(0xFF1F2937),
+                                                fontWeight = FontWeight.SemiBold,
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = "Waktu pengisian absensi ditutup",
+                                                fontSize = 13.sp,
+                                                color = Color(0xFF6B7280),
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                                lineHeight = 18.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else -> { // Status 1: Sedang berlangsung
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .shadow(6.dp, RoundedCornerShape(20.dp)),
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(24.dp)
+                            ) {
+                                if (imageUri == null) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(56.dp)
+                                                .clip(RoundedCornerShape(14.dp))
+                                                .background(
+                                                    Brush.linearGradient(
+                                                        colors = listOf(
+                                                            Color(0xFF3B82F6),
+                                                            Color(0xFF2563EB)
+                                                        )
+                                                    )
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.CameraAlt,
+                                                contentDescription = null,
+                                                tint = Color.White,
+                                                modifier = Modifier.size(30.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "Absensi Tersedia",
+                                                fontSize = 19.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF1F2937)
+                                            )
+                                            Text(
+                                                text = "Ambil foto untuk absen",
+                                                fontSize = 13.sp,
+                                                color = Color(0xFF6B7280),
+                                                modifier = Modifier.padding(top = 2.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(20.dp))
+
+                                    Button(
+                                        onClick = {
+                                            if (isValidAbsenTime()) {
+                                                try {
+                                                    val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+                                                    val fileName = "HIPMI_ABSEN_${timeStamp}.jpg"
+
+                                                    val picturesDir = File(context.getExternalFilesDir(null), "Pictures")
+                                                    if (!picturesDir.exists()) {
+                                                        picturesDir.mkdirs()
+                                                    }
+
+                                                    photoFile = File(picturesDir, fileName)
+                                                    android.util.Log.d("RapatDetailScreen", "Photo file created: ${photoFile?.absolutePath}")
+
+                                                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                                                } catch (e: Exception) {
+                                                    android.util.Log.e("RapatDetailScreen", "Error creating photo file: ${e.message}", e)
+                                                    coroutineScope.launch {
+                                                        snackbarHostState.showSnackbar("Gagal menyiapkan file foto. Silakan coba lagi.")
+                                                    }
+                                                }
+                                            } else {
+                                                coroutineScope.launch {
+                                                    snackbarHostState.showSnackbar("Waktu absensi sudah tidak valid. Silakan refresh halaman.")
+                                                }
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = GreenPrimary
+                                        ),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(56.dp),
+                                        shape = RoundedCornerShape(14.dp),
+                                        elevation = ButtonDefaults.buttonElevation(
+                                            defaultElevation = 2.dp,
+                                            pressedElevation = 6.dp
+                                        )
+                                    ) {
+                                        Icon(
+                                            Icons.Default.CameraAlt,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                        Spacer(Modifier.width(10.dp))
+                                        Text(
+                                            "Ambil Foto Absensi",
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                } else {
+                                    Text(
+                                        text = "Preview Foto",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF1F2937),
+                                        modifier = Modifier.padding(bottom = 16.dp)
                                     )
 
-                                    Row(
+                                    Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(16.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            .height(240.dp)
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .border(
+                                                width = 2.dp,
+                                                color = Color(0xFFE5E7EB),
+                                                shape = RoundedCornerShape(16.dp)
+                                            )
+                                    ) {
+                                        AsyncImage(
+                                            model = imageUri,
+                                            contentDescription = "Preview Foto Absensi",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(20.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         OutlinedButton(
                                             onClick = {
                                                 imageUri = null
                                                 photoFile = null
                                             },
-                                            modifier = Modifier.weight(1f),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(52.dp),
                                             colors = ButtonDefaults.outlinedButtonColors(
-                                                contentColor = PrimaryGreen
+                                                contentColor = GreenPrimary
                                             ),
-                                            border = BorderStroke(1.dp, PrimaryGreen)
+                                            border = BorderStroke(1.5.dp, GreenPrimary),
+                                            shape = RoundedCornerShape(14.dp)
                                         ) {
-                                            Icon(Icons.Default.Refresh, contentDescription = null)
-                                            Spacer(Modifier.width(4.dp))
-                                            Text("Ambil Ulang")
+                                            Icon(
+                                                Icons.Default.Refresh,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Spacer(Modifier.width(6.dp))
+                                            Text(
+                                                "Ambil Ulang",
+                                                fontWeight = FontWeight.SemiBold
+                                            )
                                         }
 
                                         Button(
@@ -726,30 +1051,46 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
                                                         android.util.Log.d("RapatDetailScreen", "createAbsen onSuccess called")
                                                         android.util.Log.d("RapatDetailScreen", "Response: $response")
                                                         android.util.Log.d("RapatDetailScreen", "Response data: ${response?.data}")
-                                                        
-                                                        // Simpan timestamp dari response API
+
                                                         val timestamp = response?.data?.timestamp
                                                         android.util.Log.d("RapatDetailScreen", "Timestamp from response: $timestamp")
-                                                        
+
                                                         if (timestamp != null) {
                                                             sessionManager.saveAbsenTimestamp(idAgenda, timestamp)
                                                             android.util.Log.d("RapatDetailScreen", "✓ Saved absen timestamp to SharedPreferences: $timestamp for agenda $idAgenda")
                                                         } else {
                                                             android.util.Log.e("RapatDetailScreen", "✗ Timestamp is NULL in response!")
                                                         }
-                                                        
+
                                                         navController.navigate("rapat") {
                                                             popUpTo("rapat") { inclusive = true }
                                                         }
                                                     }
                                                 )
                                             },
-                                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                                            modifier = Modifier.weight(2f)
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = GreenPrimary
+                                            ),
+                                            modifier = Modifier
+                                                .weight(2f)
+                                                .height(52.dp),
+                                            shape = RoundedCornerShape(14.dp),
+                                            elevation = ButtonDefaults.buttonElevation(
+                                                defaultElevation = 2.dp,
+                                                pressedElevation = 6.dp
+                                            )
                                         ) {
-                                            Icon(Icons.Default.Save, contentDescription = null)
-                                            Spacer(Modifier.width(4.dp))
-                                            Text("Simpan Absensi", color = Color.White)
+                                            Icon(
+                                                Icons.Default.Save,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Spacer(Modifier.width(6.dp))
+                                            Text(
+                                                "Simpan Absensi",
+                                                color = Color.White,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
                                         }
                                     }
                                 }
@@ -783,15 +1124,4 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
         )
     }
 }
-
-@Composable
-fun RapatDetailInfoRow(icon: ImageVector, text: String, tint: Color) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 3.dp)
-    ) {
-        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text, fontSize = 14.sp, color = TextPrimary)
-    }
 }

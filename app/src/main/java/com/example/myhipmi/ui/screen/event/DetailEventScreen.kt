@@ -70,8 +70,7 @@ fun DetailEventScreen(navController: NavController, eventId: Int) {
         topBar = {
             MyHipmiTopBar(
                 title = "Detail Event",
-                onBackClick = { navController.popBackStack() },
-                onMenuClick = { }
+                onBackClick = { navController.popBackStack() }
             )
         },
         content = { innerPadding ->

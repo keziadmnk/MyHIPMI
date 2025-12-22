@@ -223,8 +223,7 @@ fun DetailPiketScreen(
         topBar = {
             MyHipmiTopBar(
                 title = "Upload Absen Piket",
-                onBackClick = { navController.popBackStack() },
-                onMenuClick = { isMenuVisible = true }
+                onBackClick = { navController.popBackStack() }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },

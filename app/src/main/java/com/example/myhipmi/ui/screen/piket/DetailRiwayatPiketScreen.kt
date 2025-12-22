@@ -180,7 +180,7 @@ fun DetailRiwayatPiketScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = PrimaryGreen)
+                        CircularProgressIndicator(color = GreenPrimary)
                     }
                 }
                 errorMessage != null || absenPiket == null -> {
@@ -238,7 +238,7 @@ fun DetailRiwayatPiketScreen(
                                     icon = Icons.Default.CalendarToday,
                                     label = "Tanggal",
                                     value = formatTanggal(absenPiket!!.tanggalAbsen),
-                                    iconTint = PrimaryGreen
+                                    iconTint = GreenPrimary
                                 )
                                 
                                 Spacer(Modifier.height(12.dp))
@@ -248,7 +248,7 @@ fun DetailRiwayatPiketScreen(
                                     icon = Icons.Default.AccessTime,
                                     label = "Jam Mulai",
                                     value = formatJam(absenPiket!!.jamMulai),
-                                    iconTint = PrimaryGreen
+                                    iconTint = GreenPrimary
                                 )
                                 
                                 Spacer(Modifier.height(12.dp))
@@ -258,7 +258,7 @@ fun DetailRiwayatPiketScreen(
                                     icon = Icons.Default.AccessTime,
                                     label = "Jam Selesai",
                                     value = formatJam(absenPiket!!.jamSelesai),
-                                    iconTint = PrimaryGreen
+                                    iconTint = GreenPrimary
                                 )
                                 
                                 Spacer(Modifier.height(12.dp))
@@ -271,7 +271,7 @@ fun DetailRiwayatPiketScreen(
                                     Icon(
                                         imageVector = Icons.Default.CheckCircle,
                                         contentDescription = null,
-                                        tint = PrimaryGreen,
+                                        tint = GreenPrimary,
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(Modifier.width(12.dp))
@@ -464,12 +464,12 @@ private fun StatusChip(text: String) {
             modifier = Modifier
                 .size(6.dp)
                 .clip(androidx.compose.foundation.shape.CircleShape)
-                .background(PrimaryGreen)
+                .background(GreenPrimary)
         )
         Spacer(Modifier.width(6.dp))
         Text(
             text = text,
-            color = PrimaryGreen,
+            color = GreenPrimary,
             style = MaterialTheme.typography.labelMedium
         )
     }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -15,6 +16,8 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,6 +34,7 @@ import com.example.myhipmi.data.remote.response.AgendaRapatData
 import com.example.myhipmi.data.local.UserSessionManager
 import androidx.compose.ui.platform.LocalContext
 import java.util.*
+
 
 @Composable
 fun RapatScreen(navController: NavHostController) {
@@ -71,18 +75,34 @@ fun RapatScreen(navController: NavHostController) {
         }
     }
 
-    // Refresh saat kembali dari screen lain (hanya sekali, smooth tanpa berkedip)
+    // Snackbar state - deklarasi di atas agar bisa digunakan di LaunchedEffect
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Track jika sudah tampilkan pesan sukses
+    var hasShownSuccessMessage by remember { mutableStateOf(false) }
+
+    // Refresh saat kembali dari screen lain DAN cek pesan sukses
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     LaunchedEffect(currentBackStackEntry) {
-        if (currentBackStackEntry?.destination?.route == "rapat" && hasLoadedData) {
+        val route = currentBackStackEntry?.destination?.route
+        android.util.Log.d("RapatScreen", "Current route: $route")
+        
+        if (route == "rapat" && hasLoadedData) {
             android.util.Log.d("RapatScreen", "Back to screen - refreshing data...")
             // Single refresh untuk efisiensi
             viewModel.loadAllAgenda()
+            
+            // Cek success message dari ViewModel
+            if (!hasShownSuccessMessage && !successMessage.isNullOrBlank()) {
+                android.util.Log.d("RapatScreen", "Showing success message: $successMessage")
+                snackbarHostState.showSnackbar(successMessage!!)
+                hasShownSuccessMessage = true
+                viewModel.clearMessages()
+            }
         }
     }
 
-    // Show snackbar untuk error atau success
-    val snackbarHostState = remember { SnackbarHostState() }
+    // Show snackbar untuk error atau success dari ViewModel
     LaunchedEffect(errorMessage, successMessage) {
         errorMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -99,9 +119,7 @@ fun RapatScreen(navController: NavHostController) {
             topBar = {
                 MyHipmiTopBar(
                     title = "Agenda Rapat",
-                    onBackClick = { navController.popBackStack() },
-                    onMenuClick = { isMenuVisible = true },
-                    onNotificationClick = { navController.navigate("notifications") }
+                    onBackClick = { navController.popBackStack() }
                 )
             },
             snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -123,7 +141,7 @@ fun RapatScreen(navController: NavHostController) {
                 if (selectedTab == 0 && !showDeleteDialog) {
                     FloatingActionButton(
                         onClick = { navController.navigate("add_rapat") },
-                        containerColor = PrimaryGreen,
+                        containerColor = GreenPrimary,
                         contentColor = Color.White
                     ) {
                         Icon(Icons.Default.Add, contentDescription = "Tambah Rapat")
@@ -141,13 +159,13 @@ fun RapatScreen(navController: NavHostController) {
                 TabRow(
                     selectedTabIndex = selectedTab,
                     containerColor = Color.White,
-                    contentColor = PrimaryGreen,
+                    contentColor = GreenPrimary,
                     indicator = { tabPositions ->
                         TabRowDefaults.Indicator(
                             Modifier
                                 .tabIndicatorOffset(tabPositions[selectedTab])
                                 .height(3.dp),
-                            color = PrimaryGreen
+                            color = GreenPrimary
                         )
                     }
                 ) {
@@ -159,7 +177,7 @@ fun RapatScreen(navController: NavHostController) {
                                 Text(
                                     text = title,
                                     fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (selectedTab == index) PrimaryGreen else TextSecondary
+                                    color = if (selectedTab == index) GreenPrimary else TextSecondary
                                 )
                             }
                         )
@@ -174,7 +192,7 @@ fun RapatScreen(navController: NavHostController) {
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = PrimaryGreen)
+                        CircularProgressIndicator(color = GreenPrimary)
                     }
                 } else {
 
@@ -329,60 +347,70 @@ fun RapatCard(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = CardGreen),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(1.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(16.dp),
+                clip = false
+            )
+            .clickable {
+                navController.navigate(
+                    "rapat_detail/${rapat.idAgenda}/${rapat.title}/${rapat.dateDisplay}/${rapat.startTimeDisplay}/${rapat.endTimeDisplay}/${rapat.location}/${rapat.isDone}"
+                )
+            }
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // === Header: Judul dan menu ===
+        Column(modifier = Modifier.padding(18.dp)) {
+            // === Header: Judul, Status Badge, dan menu ===
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
                         text = rapat.title,
-                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        fontSize = 17.sp,
+                        color = Color(0xFF1F2937)
                     )
-
-                    // Status indicator
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 4.dp)
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    // STATUS BADGE
+                    val (statusText, statusColor) = when {
+                        rapat.isDone -> Pair("Hadir", 0xFF10B981)
+                        isExpired -> Pair("Tidak Hadir", 0xFFEF4444)
+                        else -> Pair("Aktif", 0xFF3B82F6)
+                    }
+                    
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(statusColor).copy(alpha = 0.15f)
                     ) {
-                        val (statusText, statusColor, statusIcon) = when {
-                            rapat.isDone -> Triple("Sudah Absen", PrimaryGreen, Icons.Default.CheckCircle)
-                            isExpired -> Triple("Waktu Habis", RedPrimary, Icons.Default.Schedule)
-                            else -> Triple("Belum Absen", BluePrimary, Icons.Default.PendingActions)
-                        }
-
-                        Icon(
-                            imageVector = statusIcon,
-                            contentDescription = null,
-                            tint = statusColor,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = statusText,
-                            fontSize = 12.sp,
-                            color = statusColor,
-                            fontWeight = FontWeight.Medium
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(statusColor),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                         )
                     }
                 }
 
+                // Tombol titik tiga
                 Box {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "Menu",
                         tint = TextPrimary,
                         modifier = Modifier
-                            .size(22.dp)
+                            .size(24.dp)
                             .clickable { showMenu = !showMenu }
                     )
 
@@ -391,19 +419,6 @@ fun RapatCard(
                         onDismissRequest = { showMenu = false },
                         modifier = Modifier.background(Color.White)
                     ) {
-                        DropdownMenuItem(
-                            text = { Text("Detail") },
-                            onClick = {
-                                showMenu = false
-                                navController.navigate(
-                                    "rapat_detail/${rapat.idAgenda}/${rapat.title}/${rapat.dateDisplay}/${rapat.startTimeDisplay}/${rapat.endTimeDisplay}/${rapat.location}/${rapat.isDone}"
-                                )
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.Info, contentDescription = null, tint = GreenPrimary)
-                            }
-                        )
-
                         if (!isSelesai) {
                             DropdownMenuItem(
                                 text = { Text("Edit") },
@@ -432,52 +447,24 @@ fun RapatCard(
             }
 
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Dibuat oleh: ${rapat.creatorName}", fontSize = 12.sp, color = TextSecondary)
-
-            Spacer(modifier = Modifier.height(8.dp))
-            RapatDetailRow(Icons.Default.CalendarToday, rapat.dateDisplay, RedPrimary)
-            // Show start and end time together
-            RapatDetailRow(Icons.Default.AccessTime, "${rapat.startTimeDisplay} - ${rapat.endTimeDisplay}", BluePrimary)
-            RapatDetailRow(Icons.Default.LocationOn, rapat.location, YellowPrimary)
+            Text(
+                "Dibuat oleh: ${rapat.creatorName}",
+                fontSize = 12.sp,
+                color = Color(0xFF9CA3AF),
+                fontWeight = FontWeight.Medium
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Button dengan logika yang disesuaikan
-            val (buttonText, buttonEnabled, buttonColor, buttonTextColor) = when {
-                rapat.isDone -> {
-                    Tuple4("Sudah Mengisi Absen", false, PrimaryGreen, Color.White)
-                }
-                isExpired -> {
-                    Tuple4("Waktu Absen Sudah Habis", false, Color.Gray, Color.White)
-                }
-                else -> {
-                    Tuple4("Isi Absensi Kehadiran", true, Color.White, PrimaryGreen)
-                }
-            }
-
-            Button(
-                onClick = {
-                    if (buttonEnabled) {
-                        navController.navigate(
-                            "rapat_detail/${rapat.idAgenda}/${rapat.title}/${rapat.dateDisplay}/${rapat.startTimeDisplay}/${rapat.endTimeDisplay}/${rapat.location}/${rapat.isDone}"
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = buttonEnabled,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = buttonColor,
-                    contentColor = buttonTextColor,
-                    disabledContainerColor = buttonColor.copy(alpha = 0.6f),
-                    disabledContentColor = buttonTextColor.copy(alpha = 0.6f)
-                ),
-                border = if (buttonEnabled && buttonColor == Color.White) BorderStroke(1.dp, PrimaryGreen) else null,
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    text = buttonText,
-                    fontWeight = FontWeight.Medium
+            // Detail Info dengan styling modern
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                RapatDetailRow(Icons.Default.CalendarToday, rapat.dateDisplay, Color(0xFFEF4444))
+                RapatDetailRow(
+                    Icons.Default.AccessTime,
+                    "${rapat.startTimeDisplay} - ${rapat.endTimeDisplay}",
+                    Color(0xFF3B82F6)
                 )
+                RapatDetailRow(Icons.Default.LocationOn, rapat.location, Color(0xFF8B5CF6))
             }
         }
     }
@@ -487,11 +474,36 @@ fun RapatCard(
 data class Tuple4<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
 @Composable
-fun RapatDetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, tint: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(imageVector = icon, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
+fun RapatDetailRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    text: String,
+    iconColor: Color
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(androidx.compose.foundation.shape.CircleShape)
+                .background(iconColor.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconColor,
+                modifier = Modifier.size(14.dp)
+            )
+        }
         Spacer(modifier = Modifier.width(8.dp))
-        Text(text, fontSize = 14.sp, color = TextPrimary)
+        Text(
+            text = text,
+            fontSize = 13.sp,
+            color = Color(0xFF374151),
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 

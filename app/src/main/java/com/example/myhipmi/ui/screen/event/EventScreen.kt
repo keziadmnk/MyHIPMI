@@ -111,9 +111,7 @@ fun EventScreen(navController: NavHostController) {
             topBar = {
                 MyHipmiTopBar(
                     title = "Event HIPMI",
-                    onBackClick = { navController.popBackStack() },
-                    onMenuClick = { isMenuVisible = true },
-                    onNotificationClick = { navController.navigate("notifications") }
+                    onBackClick = { navController.popBackStack() }
                 )
             },
 

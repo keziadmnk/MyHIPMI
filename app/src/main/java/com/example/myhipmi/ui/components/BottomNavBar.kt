@@ -25,7 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myhipmi.ui.theme.PrimaryGreen
+import com.example.myhipmi.ui.theme.GreenPrimary
 
 data class NavItem(
     val label: String,
@@ -92,7 +92,7 @@ fun NavBarItem(
     )
 
     val textColor by animateColorAsState(
-        targetValue = if (isSelected) PrimaryGreen else Color(0xFF9CA3AF),
+        targetValue = if (isSelected) GreenPrimary else Color(0xFF9CA3AF),
         animationSpec = tween(durationMillis = 200),
         label = "textColor"
     )
@@ -118,7 +118,7 @@ fun NavBarItem(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(PrimaryGreen)
+                        .background(GreenPrimary)
                 )
             }
             Icon(

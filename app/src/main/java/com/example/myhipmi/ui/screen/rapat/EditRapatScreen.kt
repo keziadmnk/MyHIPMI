@@ -1,19 +1,23 @@
 package com.example.myhipmi.ui.screen.rapat
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -30,6 +34,7 @@ import java.util.Locale
 import java.util.Calendar
 import com.example.myhipmi.data.local.UserSessionManager
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,6 +77,15 @@ fun EditRapatScreen(
     // Snackbar state
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // Animation state
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(isDataLoaded) {
+        if (isDataLoaded) {
+            delay(100)
+            isVisible = true
+        }
+    }
 
     // Load data agenda yang akan diedit
     LaunchedEffect(idAgenda) {
@@ -153,124 +167,275 @@ fun EditRapatScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(White)
+                        .background(Color(0xFFFFFFFF))
                         .padding(innerPadding)
                         .padding(horizontal = 20.dp),
-                    contentPadding = PaddingValues(vertical = 8.dp)
+                    contentPadding = PaddingValues(vertical = 16.dp)
                 ) {
+                    // Header
                     item {
-                        Text(
-                            text = "Edit Agenda Rapat",
-                            fontSize = 24.sp,
-                            color = GreenPrimary,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .wrapContentSize(Alignment.Center)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-
-                    // Input Fields
-                    item { RapatTextField("Nama Rapat", namaRapat) { namaRapat = it } }
-
-                    // Tanggal dengan DatePicker
-                    item {
-                        RapatClickableField(
-                            label = "Tanggal",
-                            value = tanggal,
-                            icon = Icons.Default.CalendarToday,
-                            onClick = { showDatePicker = true }
-                        )
-                    }
-
-                    // Jam Mulai dengan TimePicker
-                    item {
-                        RapatClickableField(
-                            label = "Jam Mulai",
-                            value = startTime,
-                            icon = Icons.Default.AccessTime,
-                            onClick = { showStartTimePicker = true }
-                        )
-                    }
-
-                    // Jam Selesai dengan TimePicker
-                    item {
-                        RapatClickableField(
-                            label = "Jam Selesai",
-                            value = endTime,
-                            icon = Icons.Default.AccessTime,
-                            onClick = { showEndTimePicker = true }
-                        )
-                    }
-
-                    item { RapatTextField("Lokasi", lokasi) { lokasi = it } }
-                    item { RapatTextField("Deskripsi", deskripsi) { deskripsi = it } }
-
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End,
-                            verticalAlignment = Alignment.CenterVertically
+                        AnimatedVisibility(
+                            visible = isVisible,
+                            enter = fadeIn() + slideInVertically(initialOffsetY = { -20 })
                         ) {
-                            Button(
-                                onClick = {
-                                    // Validasi input
-                                    if (namaRapat.isBlank()) {
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar("Nama rapat harus diisi")
-                                        }
-                                        return@Button
-                                    }
-                                    if (tanggal.isBlank()) {
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar("Tanggal harus dipilih")
-                                        }
-                                        return@Button
-                                    }
-                                    if (startTime.isBlank()) {
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar("Jam mulai harus dipilih")
-                                        }
-                                        return@Button
-                                    }
-                                    if (endTime.isBlank()) {
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar("Jam selesai harus dipilih")
-                                        }
-                                        return@Button
-                                    }
-                                    if (lokasi.isBlank()) {
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar("Lokasi harus diisi")
-                                        }
-                                        return@Button
-                                    }
+                            Column {
+                                Text(
+                                    text = "Edit Agenda Rapat",
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1F2937),
+                                    modifier = Modifier.padding(bottom = 4.dp)
+                                )
+                                Text(
+                                    text = "Perbarui informasi rapat di bawah ini",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF6B7280)
+                                )
+                                Spacer(modifier = Modifier.height(24.dp))
+                            }
+                        }
+                    }
 
-                                    // Update data rapat
-                                    viewModel.updateAgenda(
-                                        idAgenda = idAgenda,
-                                        title = namaRapat,
-                                        dateDisplay = tanggal,
-                                        dateSelectedMillis = dateSelectedMillis,
-                                        startTimeDisplay = startTime,
-                                        endTimeDisplay = endTime,
-                                        location = lokasi,
-                                        description = deskripsi
+                    // Error Message
+                    item {
+                        AnimatedVisibility(
+                            visible = !errorMessage.isNullOrBlank(),
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                                    .background(
+                                        color = Color(0xFFFEE2E2),
+                                        shape = RoundedCornerShape(8.dp)
                                     )
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
-                                shape = RoundedCornerShape(12.dp),
-                                enabled = !isLoading
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                if (isLoading) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(20.dp),
-                                        color = White,
-                                        strokeWidth = 2.dp
+                                Icon(
+                                    imageVector = Icons.Default.Error,
+                                    contentDescription = null,
+                                    tint = Color(0xFFDC2626),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = errorMessage ?: "",
+                                    color = Color(0xFFDC2626),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+
+                    // Success Message
+                    item {
+                        AnimatedVisibility(
+                            visible = !successMessage.isNullOrBlank(),
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                                    .background(
+                                        color = Color(0xFFD1FAE5),
+                                        shape = RoundedCornerShape(8.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = GreenPrimary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = successMessage ?: "",
+                                    color = GreenPrimary,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+
+                    // Input Fields with animation
+                    item {
+                        AnimatedVisibility(
+                            visible = isVisible,
+                            enter = fadeIn(animationSpec = tween(400, delayMillis = 100)) +
+                                    slideInVertically(initialOffsetY = { 30 })
+                        ) {
+                            Column {
+                                ModernTextField(
+                                    label = "Nama Rapat",
+                                    value = namaRapat,
+                                    onValueChange = { namaRapat = it },
+                                    icon = Icons.Default.Event,
+                                    isRequired = true
+                                )
+                                ModernTextField(
+                                    label = "Tanggal",
+                                    value = if (tanggal.isNotBlank()) tanggal else "Pilih Tanggal",
+                                    onValueChange = { },
+                                    icon = Icons.Default.CalendarMonth,
+                                    readOnly = true,
+                                    onClick = { showDatePicker = true },
+                                    isRequired = true
+                                )
+                                ModernTextField(
+                                    label = "Jam Mulai",
+                                    value = if (startTime.isNotBlank()) startTime else "Pilih Jam Mulai",
+                                    onValueChange = { },
+                                    icon = Icons.Default.AccessTime,
+                                    readOnly = true,
+                                    onClick = { showStartTimePicker = true },
+                                    isRequired = true
+                                )
+                                ModernTextField(
+                                    label = "Jam Selesai",
+                                    value = if (endTime.isNotBlank()) endTime else "Pilih Jam Selesai",
+                                    onValueChange = { },
+                                    icon = Icons.Default.AccessTime,
+                                    readOnly = true,
+                                    onClick = { showEndTimePicker = true },
+                                    isRequired = true
+                                )
+                                ModernTextField(
+                                    label = "Lokasi",
+                                    value = lokasi,
+                                    onValueChange = { lokasi = it },
+                                    icon = Icons.Default.LocationOn,
+                                    isRequired = true
+                                )
+                                ModernTextField(
+                                    label = "Deskripsi",
+                                    value = deskripsi,
+                                    onValueChange = { deskripsi = it },
+                                    icon = Icons.Default.Description,
+                                    singleLine = false,
+                                    minLines = 3
+                                )
+                            }
+                        }
+                    }
+
+                    // Tombol "Batal" dan "Simpan"
+                    item {
+                        AnimatedVisibility(
+                            visible = isVisible,
+                            enter = fadeIn(animationSpec = tween(400, delayMillis = 200)) +
+                                    slideInVertically(initialOffsetY = { 30 })
+                        ) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                OutlinedButton(
+                                    onClick = { navController.popBackStack() },
+                                    enabled = !isLoading,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(52.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = GreenPrimary
+                                    ),
+                                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                                        width = 1.5.dp
+                                    )
+                                ) {
+                                    Text(
+                                        text = "Batal",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
                                 }
-                                Text(text = "Simpan", color = White)
+
+                                Button(
+                                    onClick = {
+                                        // Validasi input
+                                        if (namaRapat.isBlank()) {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("Nama rapat harus diisi")
+                                            }
+                                            return@Button
+                                        }
+                                        if (tanggal.isBlank()) {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("Tanggal harus dipilih")
+                                            }
+                                            return@Button
+                                        }
+                                        if (startTime.isBlank()) {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("Jam mulai harus dipilih")
+                                            }
+                                            return@Button
+                                        }
+                                        if (endTime.isBlank()) {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("Jam selesai harus dipilih")
+                                            }
+                                            return@Button
+                                        }
+                                        if (lokasi.isBlank()) {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("Lokasi harus diisi")
+                                            }
+                                            return@Button
+                                        }
+
+                                        // Update data rapat
+                                        viewModel.updateAgenda(
+                                            idAgenda = idAgenda,
+                                            title = namaRapat,
+                                            dateDisplay = tanggal,
+                                            dateSelectedMillis = dateSelectedMillis,
+                                            startTimeDisplay = startTime,
+                                            endTimeDisplay = endTime,
+                                            location = lokasi,
+                                            description = deskripsi
+                                        )
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(52.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = GreenPrimary
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                    enabled = !isLoading
+                                ) {
+                                    if (isLoading) {
+                                        CircularProgressIndicator(
+                                            color = White,
+                                            strokeWidth = 2.dp,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    } else {
+                                        Icon(
+                                            Icons.Default.Save,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "Simpan Perubahan",
+                                            color = White,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
