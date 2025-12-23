@@ -27,6 +27,7 @@ class UserSessionManager(context: Context) {
         private const val KEY_JABATAN = "jabatan"
         private const val KEY_TOKEN = "token"
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
+        private const val KEY_HAS_UNREAD_NOTIFICATIONS = "has_unread_notifications"
     }
 
     fun saveUserSession(
@@ -115,5 +116,15 @@ class UserSessionManager(context: Context) {
     // Fungsi untuk mengambil timestamp absen per agenda
     fun getAbsenTimestamp(idAgenda: Int): String? {
         return prefs.getString("absen_timestamp_$idAgenda", null)
+    }
+    
+    fun setHasUnreadNotifications(hasUnread: Boolean) {
+        val editor = prefs.edit()
+        editor.putBoolean(KEY_HAS_UNREAD_NOTIFICATIONS, hasUnread)
+        editor.apply()
+    }
+    
+    fun getHasUnreadNotifications(): Boolean {
+        return prefs.getBoolean(KEY_HAS_UNREAD_NOTIFICATIONS, false)
     }
 }

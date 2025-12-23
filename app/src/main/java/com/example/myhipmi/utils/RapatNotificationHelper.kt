@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.myhipmi.MainActivity
+import com.example.myhipmi.data.local.UserSessionManager
 
 object RapatNotificationHelper {
     private const val CHANNEL_ID = "rapat_notifications"
@@ -31,6 +32,9 @@ object RapatNotificationHelper {
 
     fun showRapatNotification(context: Context, rapatTitle: String, rapatDate: String, rapatLocation: String) {
         createNotificationChannel(context)
+        
+        val sessionManager = UserSessionManager(context)
+        sessionManager.setHasUnreadNotifications(true)
         
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val intent = Intent(context, MainActivity::class.java).apply {

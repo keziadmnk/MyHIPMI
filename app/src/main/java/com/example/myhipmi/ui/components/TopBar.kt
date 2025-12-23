@@ -2,6 +2,7 @@ package com.example.myhipmi.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
@@ -25,6 +26,7 @@ fun MyHipmiTopBar(
     onBackClick: (() -> Unit)? = null,
     onMenuClick: (() -> Unit)? = null,
     onNotificationClick: (() -> Unit)? = null,
+    hasUnreadNotifications: Boolean = false,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
 
@@ -65,12 +67,23 @@ fun MyHipmiTopBar(
             },
             actions = {
                 if (onNotificationClick != null) {
-                    IconButton(onClick = onNotificationClick) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Notifications",
-                            tint = DarkGreen
-                        )
+                    Box {
+                        IconButton(onClick = onNotificationClick) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Notifications",
+                                tint = DarkGreen
+                            )
+                        }
+                        if (hasUnreadNotifications) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .background(Color.Red, CircleShape)
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = (-8).dp, y = 8.dp)
+                            )
+                        }
                     }
                 }
 

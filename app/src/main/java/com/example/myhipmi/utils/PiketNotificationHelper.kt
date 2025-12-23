@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.myhipmi.MainActivity
 import com.example.myhipmi.R
+import com.example.myhipmi.data.local.UserSessionManager
 
 object PiketNotificationHelper {
     private const val CHANNEL_ID = "piket_notifications"
@@ -32,6 +33,9 @@ object PiketNotificationHelper {
     }
 
     fun showPiketNotification(context: Context) {
+        val sessionManager = UserSessionManager(context)
+        sessionManager.setHasUnreadNotifications(true)
+        
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

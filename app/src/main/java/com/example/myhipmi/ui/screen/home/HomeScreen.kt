@@ -74,6 +74,7 @@ fun HomeScreen(
     var activeRapatCount by remember { mutableStateOf(0) }
     var recentNotifications by remember { mutableStateOf<List<NotificationItem>>(emptyList()) }
     var refreshTrigger by remember { mutableStateOf(0) }
+    var hasUnreadNotif by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     
     val totalKasState by viewModel.totalKasState.collectAsState()
@@ -89,6 +90,7 @@ fun HomeScreen(
     LaunchedEffect(currentRoute) {
         if (currentRoute == "home") {
             refreshTrigger++
+            hasUnreadNotif = sessionManager.getHasUnreadNotifications()
         }
     }
 
@@ -274,13 +276,15 @@ fun HomeScreen(
                             tint = Color(0xFF4A5D23),
                             modifier = Modifier.size(28.dp)
                         )
-                        // Red dot notification indicator
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .background(Color.Red, CircleShape)
-                                .align(Alignment.TopEnd)
-                        )
+                        if (hasUnreadNotif) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .background(Color.Red, CircleShape)
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 2.dp, y = (-2).dp)
+                            )
+                        }
                     }
                     Icon(
                         Icons.Default.Menu,

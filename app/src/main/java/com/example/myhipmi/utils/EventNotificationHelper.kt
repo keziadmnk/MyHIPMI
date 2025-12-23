@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.myhipmi.MainActivity
+import com.example.myhipmi.data.local.UserSessionManager
 
 object EventNotificationHelper {
     private const val CHANNEL_ID = "event_notifications"
@@ -31,6 +32,9 @@ object EventNotificationHelper {
 
     fun showEventNotification(context: Context, eventName: String, eventDate: String, eventLocation: String) {
         createNotificationChannel(context)
+        
+        val sessionManager = UserSessionManager(context)
+        sessionManager.setHasUnreadNotifications(true)
         
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val intent = Intent(context, MainActivity::class.java).apply {
@@ -60,3 +64,4 @@ object EventNotificationHelper {
         notificationManager.notify(System.currentTimeMillis().toInt(), notification)
     }
 }
+

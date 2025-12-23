@@ -10,6 +10,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.myhipmi.MainActivity
 import com.example.myhipmi.R
+import com.example.myhipmi.data.local.UserSessionManager
 
 object KasNotificationHelper {
     private const val CHANNEL_ID = "kas_reminder_channel"
@@ -35,6 +36,9 @@ object KasNotificationHelper {
     }
 
     fun showKasReminderNotification(context: Context, title: String, message: String) {
+        val sessionManager = UserSessionManager(context)
+        sessionManager.setHasUnreadNotifications(true)
+        
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
@@ -60,6 +64,9 @@ object KasNotificationHelper {
     }
 
     fun showKasNotification(context: Context) {
+        val sessionManager = UserSessionManager(context)
+        sessionManager.setHasUnreadNotifications(true)
+        
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }

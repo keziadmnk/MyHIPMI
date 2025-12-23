@@ -83,11 +83,13 @@ fun NotificationScreen(navController: NavHostController) {
         }
     }
     LaunchedEffect(Unit) {
+        sessionManager.setHasUnreadNotifications(false)
         loadAllNotifications()
     }
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     LaunchedEffect(currentBackStackEntry) {
         if (currentBackStackEntry?.destination?.route == "notifications") {
+            sessionManager.setHasUnreadNotifications(false)
             loadAllNotifications()
         }
     }
