@@ -32,7 +32,7 @@ import androidx.navigation.NavHostController
 import com.example.myhipmi.data.local.UserSessionManager
 import com.example.myhipmi.data.remote.retrofit.ApiConfig
 import com.example.myhipmi.data.remote.response.CreateAbsenPiketRequest
-import com.example.myhipmi.ui.components.MenuDrawer
+
 import com.example.myhipmi.ui.components.MyHipmiTopBar
 import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
 import com.example.myhipmi.ui.theme.*
@@ -54,39 +54,28 @@ fun DetailPiketScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     
-    var isMenuVisible by remember { mutableStateOf(false) }
+
     var deskripsi by remember { mutableStateOf("") }
     var jamMulai by remember { mutableStateOf("") }
     var jamSelesai by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    
-    // State untuk id_jadwal_piket (akan diambil dari API atau session)
     var idJadwalPiket by remember { mutableStateOf<Int?>(null) }
-
-    // Camera / preview states
     var capturedImage by remember { mutableStateOf<Bitmap?>(null) }
     var isImagePreviewVisible by remember { mutableStateOf(false) }
-    
-    // Time Picker states
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
     val startTimePickerState = rememberTimePickerState()
     val endTimePickerState = rememberTimePickerState()
-    
-    // Tanggal hari ini (real time) untuk tampilan
     val tanggalHariIni = remember {
         val dateFormat = SimpleDateFormat("EEEE, d MMMM yyyy", Locale("id", "ID"))
         dateFormat.format(Date())
     }
-    
-    // Format tanggal untuk backend (YYYY-MM-DD) - menggunakan tanggal hari ini
+
     val tanggalFormatBackend = remember {
         val outputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         outputFormat.format(Date())
     }
-    
-    // Ambil id_jadwal_piket dari pengurus via API
     LaunchedEffect(loggedInUserId) {
         if (loggedInUserId != null) {
             scope.launch {
@@ -109,16 +98,12 @@ fun DetailPiketScreen(
             }
         }
     }
-    
-    // Fungsi untuk convert Bitmap ke Base64
     fun bitmapToBase64(bitmap: Bitmap): String {
         val outputStream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
         val byteArray = outputStream.toByteArray()
         return Base64.encodeToString(byteArray, Base64.NO_WRAP)
     }
-    
-    // Fungsi untuk save absen piket
     fun saveAbsenPiket() {
         // Validasi semua field wajib
         if (deskripsi.isBlank()) {
@@ -164,11 +149,8 @@ fun DetailPiketScreen(
         
         scope.launch {
             try {
-                // Convert bitmap ke base64
                 val fotoBase64 = bitmapToBase64(capturedImage!!)
                 val fotoUrl = "data:image/jpeg;base64,$fotoBase64"
-                
-                // Parse jam dari format "HH:mm WIB" ke "HH:mm:ss"
                 val jamMulaiFormatted = jamMulai.replace(" WIB", "").trim() + ":00"
                 val jamSelesaiFormatted = jamSelesai.replace(" WIB", "").trim() + ":00"
                 
@@ -227,7 +209,6 @@ fun DetailPiketScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        // hide bottom bar when showing image preview so focus is on the preview
         bottomBar = {
             if (!isImagePreviewVisible) {
                 BottomNavBarContainer(
@@ -256,8 +237,6 @@ fun DetailPiketScreen(
                     .padding(horizontal = 16.dp),
             ) {
                 Spacer(Modifier.height(12.dp))
-
-                // Kartu "Piket Hari Ini"
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -288,8 +267,6 @@ fun DetailPiketScreen(
                 }
 
                 Spacer(Modifier.height(16.dp))
-
-                // Form Jam Mulai
                 Row {
                     Text(
                         text = "Jam Mulai",
@@ -336,8 +313,6 @@ fun DetailPiketScreen(
                 )
                 
                 Spacer(Modifier.height(12.dp))
-
-                // Label deskripsi
                 Row {
                     Text(
                         text = "Deskripsi",
@@ -353,8 +328,6 @@ fun DetailPiketScreen(
                     )
                 }
                 Spacer(Modifier.height(6.dp))
-
-                // TextField deskripsi
                 OutlinedTextField(
                     value = deskripsi,
                     onValueChange = { deskripsi = it },
@@ -392,7 +365,6 @@ fun DetailPiketScreen(
                 )
                 Spacer(Modifier.height(10.dp))
 
-                // Area unggah/ambil foto
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -401,18 +373,14 @@ fun DetailPiketScreen(
                         .background(SecondaryGreen),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Border tipis seperti pada mockup
                     Box(
                         modifier = Modifier
                             .matchParentSize()
                             .clip(RoundedCornerShape(14.dp))
                             .background(SecondaryGreen)
                     )
-
-                    // Tombol "Ambil foto" -> launch camera preview
                     Button(
                         onClick = {
-                            // launch camera preview (TakePicturePreview)
                             takePicturePreviewLauncher.launch(null)
                         },
                         shape = RoundedCornerShape(10.dp),
@@ -435,8 +403,6 @@ fun DetailPiketScreen(
                 Spacer(Modifier.height(24.dp))
                 Spacer(Modifier.height(96.dp))
             }
-            
-            // Time Picker Dialogs
             if (showStartTimePicker) {
                 TimePickerDialog(
                     onDismissRequest = { showStartTimePicker = false },
@@ -502,17 +468,12 @@ fun DetailPiketScreen(
                     )
                 }
             }
-
-            // Image preview bottom sheet overlay
             if (isImagePreviewVisible && capturedImage != null) {
-                // dim background
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
                 )
-
-                // bottom sheet style card
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -598,28 +559,6 @@ fun DetailPiketScreen(
         }
     }
 
-    // Menu drawer
-    MenuDrawer(
-        isVisible = isMenuVisible,
-        onDismiss = { isMenuVisible = false },
-        userName = loggedInUserName ?: "Pengurus",
-        userRole = "Sekretaris Umum",
-        onProfileClick = {
-            isMenuVisible = false
-            navController.navigate("profile")
-        },
-        onAboutClick = {
-            isMenuVisible = false
-            navController.navigate("about")
-        },
-        onLogoutClick = {
-            isMenuVisible = false
-            sessionManager.clearSession()
-            navController.navigate("login") {
-                popUpTo("home") { inclusive = true }
-            }
-        }
-    )
 }
 
 @Composable

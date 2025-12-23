@@ -92,7 +92,6 @@ fun LoginPage(
                     )
                     .padding(32.dp)
             ) {
-                // Logo with animation
                 Box(
                     modifier = Modifier
                         .size(100.dp)
@@ -130,8 +129,6 @@ fun LoginPage(
                     color = Color(0xFF6B7280),
                     modifier = Modifier.padding(top = 4.dp, bottom = 32.dp)
                 )
-
-                // Email Field
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = "Email",
@@ -214,8 +211,6 @@ fun LoginPage(
                         )
                     )
                 }
-
-                // Error Message
                 AnimatedVisibility(
                     visible = !errorMessage.isNullOrBlank(),
                     enter = fadeIn() + expandVertically(),
@@ -249,8 +244,6 @@ fun LoginPage(
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
-
-                // Login Button
                 Button(
                     onClick = {
                     if (email.isBlank() || password.isBlank()) {
@@ -272,7 +265,6 @@ fun LoginPage(
                                 val hasToken = !body?.token.isNullOrBlank()
 
                                 if (hasToken && body != null) {
-                                    // Simpan data user ke session
                                     val user = body.user
                                     if (user != null && user.idPengurus != null) {
                                         sessionManager.saveUserSession(

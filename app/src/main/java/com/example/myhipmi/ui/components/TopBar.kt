@@ -23,9 +23,9 @@ import com.example.myhipmi.ui.theme.TextPrimary
 fun MyHipmiTopBar(
     title: String,
     onBackClick: (() -> Unit)? = null,
-    onMenuClick: (() -> Unit)? = null, // Diubah jadi nullable
-    onNotificationClick: (() -> Unit)? = null, // Diubah jadi nullable
-    actions: @Composable RowScope.() -> Unit = {} // Tambahan parameter actions
+    onMenuClick: (() -> Unit)? = null,
+    onNotificationClick: (() -> Unit)? = null,
+    actions: @Composable RowScope.() -> Unit = {}
 ) {
 
     val gradientBrush = Brush.verticalGradient(
@@ -64,10 +64,6 @@ fun MyHipmiTopBar(
                 }
             },
             actions = {
-                // Jika actions custom diberikan, tampilkan itu
-                // Jika tidak, tampilkan default notification & menu (jika onMenuClick ada)
-                
-                // Kita gabungkan actions bawaan (notif/menu) dengan actions custom
                 if (onNotificationClick != null) {
                     IconButton(onClick = onNotificationClick) {
                         Icon(
@@ -77,8 +73,7 @@ fun MyHipmiTopBar(
                         )
                     }
                 }
-                
-                // Render custom actions di sini
+
                 actions()
 
                 if (onMenuClick != null) {

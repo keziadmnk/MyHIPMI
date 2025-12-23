@@ -35,9 +35,7 @@ fun MenuDrawer(
     onAboutClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {}
 ) {
-    // Layer luar
     Box(modifier = Modifier.fillMaxSize()) {
-        // Background gelap di belakang drawer
         AnimatedVisibility(
             visible = isVisible,
             enter = fadeIn(),
@@ -51,21 +49,20 @@ fun MenuDrawer(
             )
         }
 
-        // Drawer di kanan layar
         AnimatedVisibility(
             visible = isVisible,
-            enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(), // masuk dari kanan
-            exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()  // keluar ke kanan
+            enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
+            exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxSize(),
-                horizontalArrangement = Arrangement.End // 🟩 PENTING: Dorong ke kanan layar
+                horizontalArrangement = Arrangement.End
             ) {
                 Surface(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .fillMaxWidth(0.75f), // 🟩 Lebar 3/4 layar
+                        .fillMaxWidth(0.75f),
                     color = Color(0xFFF5F5F5),
                     shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
                     shadowElevation = 8.dp
@@ -75,7 +72,6 @@ fun MenuDrawer(
                             .fillMaxSize()
                             .padding(24.dp)
                     ) {
-                        // Header user info
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.fillMaxWidth()
@@ -97,13 +93,10 @@ fun MenuDrawer(
 
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(userName, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2D3319))
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(userRole, fontSize = 14.sp, color = Color(0xFF6B7280))
                         }
 
                         Spacer(modifier = Modifier.height(32.dp))
 
-                        // Menu
                         MenuDrawerItem(
                             icon = Icons.Default.Person,
                             text = "Profile",

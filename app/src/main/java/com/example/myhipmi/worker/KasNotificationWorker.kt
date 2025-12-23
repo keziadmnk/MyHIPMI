@@ -16,18 +16,10 @@ class KasNotificationWorker(
         Log.d("KasNotificationWorker", "Worker started")
         
         try {
-            // Logika: Cek apakah hari ini tanggal 25 (atau tanggal gajian)
-            // Untuk demo/testing, kita bisa membiarkannya selalu mengirim notifikasi saat worker jalan
-            // Di produksi, uncomment kondisi di bawah ini:
-            
             val calendar = Calendar.getInstance()
             val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
-            
-            // Contoh: Hanya kirim notifikasi jika tanggal 25
-            // if (dayOfMonth == 25) {
                 KasNotificationHelper.showKasNotification(applicationContext)
-            // }
-            
+
             return Result.success()
         } catch (e: Exception) {
             Log.e("KasNotificationWorker", "Error showing notification", e)

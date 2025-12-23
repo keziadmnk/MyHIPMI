@@ -1,7 +1,5 @@
 package com.example.myhipmi.ui.screen.event
 
-
-// ... (Impor yang sudah Anda miliki dari AddEventScreen)
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.net.Uri
@@ -36,7 +34,7 @@ import coil.compose.AsyncImage
 import com.example.myhipmi.data.local.UserSessionManager
 import com.example.myhipmi.data.remote.retrofit.ApiConfig
 import com.example.myhipmi.ui.components.MyHipmiTopBar
-import com.example.myhipmi.ui.components.MenuDrawer
+
 import com.example.myhipmi.ui.theme.GreenPrimary
 import com.example.myhipmi.ui.theme.White
 import kotlinx.coroutines.delay
@@ -50,10 +48,9 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 
-// MENGGANTIKAN AddEventScreen dengan EditEventScreen
 @Composable
-fun EditEventScreen(navController: NavHostController, eventId: Int) { // <-- Menerima eventId
-    var isMenuVisible by remember { mutableStateOf(false) }
+fun EditEventScreen(navController: NavHostController, eventId: Int) {
+
     val context = LocalContext.current
     val sessionManager = remember { UserSessionManager(context) }
     val calendar = remember { Calendar.getInstance() }
@@ -62,14 +59,12 @@ fun EditEventScreen(navController: NavHostController, eventId: Int) { // <-- Men
         Scaffold(
             topBar = {
                 MyHipmiTopBar(
-                    title = "Edit Event", // <-- Ganti judul
-                    onBackClick = { navController.popBackStack() },
-                    onMenuClick = { isMenuVisible = true }
+                    title = "Edit Event",
+                    onBackClick = { navController.popBackStack() }
                 )
             },
 
             ) { innerPadding ->
-            // State variables
             var namaEvent by remember { mutableStateOf("") }
             var tanggal by remember { mutableStateOf("") }
             var waktu by remember { mutableStateOf("") }
@@ -78,28 +73,23 @@ fun EditEventScreen(navController: NavHostController, eventId: Int) { // <-- Men
             var penyelenggara by remember { mutableStateOf("") }
             var contactPerson by remember { mutableStateOf("") }
             var deskripsi by remember { mutableStateOf("") }
-            var currentPosterUrl by remember { mutableStateOf<String?>(null) } // <-- State untuk URL poster lama
+            var currentPosterUrl by remember { mutableStateOf<String?>(null) }
 
             var isVisible by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) {
                 delay(100)
                 isVisible = true
             }
-            // Ganti isLoading (untuk fetch data) dan isSubmitting (untuk submit form)
-            var isLoading by remember { mutableStateOf(true) } // <-- Mulai loading untuk fetch data
-            var isSubmitting by remember { mutableStateOf(false) } // <-- Untuk tombol submit
+            var isLoading by remember { mutableStateOf(true) }
+            var isSubmitting by remember { mutableStateOf(false) }
             var errorMessage by remember { mutableStateOf<String?>(null) }
             var successMessage by remember { mutableStateOf<String?>(null) }
             val coroutineScope = rememberCoroutineScope()
             val apiService = remember { ApiConfig.getApiService() }
-            var fileUri by remember { mutableStateOf<Uri?>(null) } // <-- Untuk poster baru yang dipilih
+            var fileUri by remember { mutableStateOf<Uri?>(null) }
 
 
             val idPengurus = remember { sessionManager.getIdPengurus() }
-
-            // =========================================================================
-            // LOGIC FETCH DATA UNTUK PRE-FILL FORM
-            // =========================================================================
             LaunchedEffect(eventId) {
                 if (eventId > 0) {
                     isLoading = true
@@ -110,16 +100,15 @@ fun EditEventScreen(navController: NavHostController, eventId: Int) { // <-- Men
                         if (response.isSuccessful) {
                             val event = response.body()?.event
                             if (event != null) {
-                                // Isi semua state dengan data yang diambil
                                 namaEvent = event.namaEvent
                                 tanggal = event.tanggal
-                                waktu = event.waktu.substring(0, 5) // Format HH:MM
+                                waktu = event.waktu.substring(0, 5)
                                 tempat = event.tempat
                                 dresscode = event.dresscode ?: ""
                                 penyelenggara = event.penyelenggara
                                 contactPerson = event.contactPerson ?: ""
                                 deskripsi = event.deskripsi ?: ""
-                                currentPosterUrl = event.posterUrl // Simpan URL poster
+                                currentPosterUrl = event.posterUrl
                             } else {
                                 errorMessage = "Data event tidak ditemukan."
                             }
@@ -136,7 +125,6 @@ fun EditEventScreen(navController: NavHostController, eventId: Int) { // <-- Men
                     errorMessage = "ID Event tidak valid."
                 }
             }
-            // =========================================================================
 
             val filePickerLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.GetContent()
@@ -144,9 +132,7 @@ fun EditEventScreen(navController: NavHostController, eventId: Int) { // <-- Men
                 fileUri = uri
             }
 
-            // Date Picker Dialog (sama)
             val datePickerDialog = remember {
-                // ... (kode datePickerDialog yang sama)
                 DatePickerDialog(
                     context,
                     { _, year, month, dayOfMonth ->
@@ -162,10 +148,7 @@ fun EditEventScreen(navController: NavHostController, eventId: Int) { // <-- Men
                     calendar.get(Calendar.DAY_OF_MONTH)
                 )
             }
-
-            // Time Picker Dialog (sama)
             val timePickerDialog = remember {
-                // ... (kode timePickerDialog yang sama)
                 TimePickerDialog(
                     context,
                     { _, hourOfDay, minute ->
@@ -209,7 +192,7 @@ fun EditEventScreen(navController: NavHostController, eventId: Int) { // <-- Men
                                     modifier = Modifier.padding(bottom = 4.dp)
                                 )
                                 Text(
-                                    text = "Ubah informasi event di bawah ini", // <-- Ganti teks sub-header
+                                    text = "Ubah informasi event di bawah ini",
                                     fontSize = 14.sp,
                                     color = Color(0xFF6B7280)
                                 )
@@ -218,17 +201,10 @@ fun EditEventScreen(navController: NavHostController, eventId: Int) { // <-- Men
                         }
                     }
 
-                    // Error Message (sama)
                     item {
-                        // ...
                     }
-
-                    // Success Message (sama)
                     item {
-                        // ...
                     }
-
-                    // Input Fields (menggunakan state yang sudah diisi)
                     item {
                         AnimatedVisibility(
                             visible = isVisible,

@@ -13,14 +13,11 @@ data class NotificationItem(
     val body: String,
     val created_at: String
 )
-
-// Request untuk membuat notifikasi piket
 data class CreatePiketNotificationRequest(
     @SerializedName("id_pengurus")
     val idPengurus: Int
 )
 
-// Response untuk membuat notifikasi piket
 data class CreatePiketNotificationResponse(
     @SerializedName("success")
     val success: Boolean,

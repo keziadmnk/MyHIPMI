@@ -42,7 +42,7 @@ class KasViewModel : ViewModel() {
             repository.getKas(userId).collect { result ->
                 result.onSuccess { response ->
                     _kasList.value = response.data ?: emptyList()
-                    _kasState.value = KasState.Idle // Kembali ke idle agar tidak memicu toast berulang
+                    _kasState.value = KasState.Idle
                 }.onFailure {
                     _kasState.value = KasState.Error(it.message ?: "Terjadi kesalahan")
                 }
@@ -119,7 +119,6 @@ class KasViewModel : ViewModel() {
             _kasState.value = KasState.Loading
             repository.deleteKas(id).collect { result ->
                 result.onSuccess {
-                    // Perbaikan: Pesan yang lebih sesuai untuk pembatalan/reset
                     _kasState.value = KasState.Success(it.message ?: "Pembayaran telah dibatalkan")
                     getKas(userId)
                 }.onFailure {

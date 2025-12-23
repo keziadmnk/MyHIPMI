@@ -33,7 +33,6 @@ object FileUtil {
     }
 
     private fun queryFileName(context: Context, uri: Uri): String? {
-        // Try to get display name from content resolver if possible
         return try {
             val cursor = context.contentResolver.query(uri, null, null, null, null)
             cursor?.use {
@@ -46,8 +45,6 @@ object FileUtil {
             null
         }
     }
-
-    // Safe helper to find display name column index (works for many devices)
     private fun android.database.Cursor.getColumnIndexOpenableColumnName(): Int {
         val nameCols = arrayOf("_display_name", "display_name")
         for (col in nameCols) {

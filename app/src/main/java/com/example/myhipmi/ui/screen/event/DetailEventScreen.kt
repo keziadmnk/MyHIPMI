@@ -147,13 +147,11 @@ fun EventDetailContent(event: EventItemResponse) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        // Header dengan gradient overlay
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(320.dp)
         ) {
-            // Poster Image
             AsyncImage(
                 model = event.posterUrl,
                 contentDescription = "Poster Event",
@@ -163,7 +161,6 @@ fun EventDetailContent(event: EventItemResponse) {
                 error = painterResource(R.drawable.myhipmi_logo)
             )
 
-            // Gradient Overlay
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -178,7 +175,6 @@ fun EventDetailContent(event: EventItemResponse) {
                     )
             )
 
-            // Event Title di atas poster
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -193,8 +189,6 @@ fun EventDetailContent(event: EventItemResponse) {
                 )
             }
         }
-
-        // Content Section
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -225,7 +219,6 @@ fun EventDetailContent(event: EventItemResponse) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Detail Information Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -277,7 +270,6 @@ fun EventDetailContent(event: EventItemResponse) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Description Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),

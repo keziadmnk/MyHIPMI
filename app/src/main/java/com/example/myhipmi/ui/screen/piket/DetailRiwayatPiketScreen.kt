@@ -28,7 +28,7 @@ import androidx.navigation.NavHostController
 import com.example.myhipmi.data.local.UserSessionManager
 import com.example.myhipmi.data.remote.retrofit.ApiConfig
 import com.example.myhipmi.data.remote.response.AbsenPiketData
-import com.example.myhipmi.ui.components.MenuDrawer
+
 import com.example.myhipmi.ui.components.MyHipmiTopBar
 import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
 import com.example.myhipmi.ui.theme.*
@@ -48,32 +48,41 @@ fun DetailRiwayatPiketScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     
-    var isMenuVisible by remember { mutableStateOf(false) }
+
     var absenPiket by remember { mutableStateOf<AbsenPiketData?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    
-    // Ambil data absen piket dari API
     LaunchedEffect(idAbsenPiket) {
         isLoading = true
         try {
+            android.util.Log.d("DetailRiwayatPiket", "Fetching absen piket with ID: $idAbsenPiket")
             val response = apiService.getAbsenPiketById(idAbsenPiket)
+            android.util.Log.d("DetailRiwayatPiket", "Response code: ${response.code()}")
+            android.util.Log.d("DetailRiwayatPiket", "Response successful: ${response.isSuccessful}")
+            
             if (response.isSuccessful && response.body()?.success == true) {
                 absenPiket = response.body()?.data
                 if (absenPiket == null) {
                     errorMessage = "Data absen piket tidak ditemukan"
+                    android.util.Log.e("DetailRiwayatPiket", "Data is null in response body")
+                } else {
+                    android.util.Log.d("DetailRiwayatPiket", "Data loaded successfully")
+                    android.util.Log.d("DetailRiwayatPiket", "Foto bukti length: ${absenPiket!!.fotoBukti.length}")
+                    android.util.Log.d("DetailRiwayatPiket", "Foto bukti preview: ${absenPiket!!.fotoBukti.take(100)}")
                 }
             } else {
                 errorMessage = "Gagal memuat data absen piket"
+                android.util.Log.e("DetailRiwayatPiket", "Response not successful or success=false")
+                android.util.Log.e("DetailRiwayatPiket", "Error body: ${response.errorBody()?.string()}")
             }
         } catch (e: Exception) {
             errorMessage = "Error: ${e.message}"
+            android.util.Log.e("DetailRiwayatPiket", "Exception while fetching data: ${e.message}")
+            android.util.Log.e("DetailRiwayatPiket", "Stack trace: ${e.stackTraceToString()}")
         } finally {
             isLoading = false
         }
     }
-    
-    // Fungsi untuk format tanggal dari database (YYYY-MM-DD) ke format tampilan
     fun formatTanggal(tanggalDb: String): String {
         return try {
             val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -88,8 +97,7 @@ fun DetailRiwayatPiketScreen(
             tanggalDb
         }
     }
-    
-    // Fungsi untuk format jam dari database (HH:mm:ss) ke format tampilan
+
     fun formatJam(jamDb: String): String {
         return try {
             val inputFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
@@ -104,39 +112,50 @@ fun DetailRiwayatPiketScreen(
             jamDb
         }
     }
-    
-    // Fungsi untuk decode base64 image
+
     fun decodeBase64Image(base64String: String): android.graphics.Bitmap? {
         return try {
-            // Handle berbagai format base64
+            android.util.Log.d("DetailRiwayatPiket", "=== START DECODING BASE64 IMAGE ===")
+            android.util.Log.d("DetailRiwayatPiket", "Original string length: ${base64String.length}")
+            android.util.Log.d("DetailRiwayatPiket", "First 100 chars: ${base64String.take(100)}")
+
             val base64Image = when {
                 base64String.contains(",") -> {
-                    // Jika ada koma, ambil bagian setelah koma (setelah "data:image/...;base64,")
+                    android.util.Log.d("DetailRiwayatPiket", "Detected comma in string, extracting base64 part")
                     base64String.substringAfter(",")
                 }
                 base64String.startsWith("data:") -> {
-                    // Jika dimulai dengan "data:", ambil setelah koma
+                    android.util.Log.d("DetailRiwayatPiket", "Detected data: prefix")
                     base64String.substringAfter(",")
                 }
                 else -> {
-                    // Jika tidak ada prefix, gunakan langsung
+                    android.util.Log.d("DetailRiwayatPiket", "No prefix detected, using raw string")
                     base64String
                 }
             }.trim()
             
-            // Decode base64
+            android.util.Log.d("DetailRiwayatPiket", "Processed string length: ${base64Image.length}")
+            android.util.Log.d("DetailRiwayatPiket", "First 50 chars of processed: ${base64Image.take(50)}")
+
             val imageBytes = Base64.decode(base64Image, Base64.DEFAULT)
-            
-            // Decode bitmap
+            android.util.Log.d("DetailRiwayatPiket", "Decoded bytes size: ${imageBytes.size}")
+
             val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
             
             if (bitmap == null) {
                 android.util.Log.e("DetailRiwayatPiket", "Failed to decode bitmap from base64")
+                android.util.Log.e("DetailRiwayatPiket", "Image bytes size was: ${imageBytes.size}")
+            } else {
+                android.util.Log.d("DetailRiwayatPiket", "SUCCESS! Bitmap decoded: ${bitmap.width}x${bitmap.height}")
             }
             
+            android.util.Log.d("DetailRiwayatPiket", "=== END DECODING BASE64 IMAGE ===")
             bitmap
         } catch (e: Exception) {
-            android.util.Log.e("DetailRiwayatPiket", "Error decoding base64: ${e.message}")
+            android.util.Log.e("DetailRiwayatPiket", "=== ERROR DECODING BASE64 IMAGE ===")
+            android.util.Log.e("DetailRiwayatPiket", "Error type: ${e.javaClass.simpleName}")
+            android.util.Log.e("DetailRiwayatPiket", "Error message: ${e.message}")
+            android.util.Log.e("DetailRiwayatPiket", "Stack trace: ${e.stackTraceToString()}")
             android.util.Log.e("DetailRiwayatPiket", "Base64 string length: ${base64String.length}")
             android.util.Log.e("DetailRiwayatPiket", "Base64 string preview: ${base64String.take(100)}")
             null
@@ -147,8 +166,7 @@ fun DetailRiwayatPiketScreen(
         topBar = {
             MyHipmiTopBar(
                 title = "Detail Absen Piket",
-                onBackClick = { navController.popBackStack() },
-                onMenuClick = { isMenuVisible = true }
+                onBackClick = { navController.popBackStack() }
             )
         },
         bottomBar = {
@@ -215,8 +233,6 @@ fun DetailRiwayatPiketScreen(
                             .padding(horizontal = 16.dp)
                     ) {
                         Spacer(Modifier.height(12.dp))
-                        
-                        // Card Informasi Utama
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
@@ -232,8 +248,6 @@ fun DetailRiwayatPiketScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                                 Spacer(Modifier.height(16.dp))
-                                
-                                // Tanggal
                                 DetailRow(
                                     icon = Icons.Default.CalendarToday,
                                     label = "Tanggal",
@@ -242,8 +256,6 @@ fun DetailRiwayatPiketScreen(
                                 )
                                 
                                 Spacer(Modifier.height(12.dp))
-                                
-                                // Jam Mulai
                                 DetailRow(
                                     icon = Icons.Default.AccessTime,
                                     label = "Jam Mulai",
@@ -252,8 +264,6 @@ fun DetailRiwayatPiketScreen(
                                 )
                                 
                                 Spacer(Modifier.height(12.dp))
-                                
-                                // Jam Selesai
                                 DetailRow(
                                     icon = Icons.Default.AccessTime,
                                     label = "Jam Selesai",
@@ -262,8 +272,6 @@ fun DetailRiwayatPiketScreen(
                                 )
                                 
                                 Spacer(Modifier.height(12.dp))
-                                
-                                // Status
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
@@ -290,8 +298,6 @@ fun DetailRiwayatPiketScreen(
                         }
                         
                         Spacer(Modifier.height(16.dp))
-                        
-                        // Card Deskripsi
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
@@ -316,8 +322,6 @@ fun DetailRiwayatPiketScreen(
                         }
                         
                         Spacer(Modifier.height(16.dp))
-                        
-                        // Card Foto Bukti
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
@@ -335,15 +339,12 @@ fun DetailRiwayatPiketScreen(
                                 Spacer(Modifier.height(12.dp))
                                 
                                 val fotoBuktiString = absenPiket!!.fotoBukti
-                                
-                                // Decode base64 image
                                 val bitmap = remember(fotoBuktiString) {
                                     decodeBase64Image(fotoBuktiString)
                                 }
                                 
                                 when {
                                     bitmap != null -> {
-                                        // Jika berhasil decode, tampilkan sebagai bitmap
                                         Image(
                                             bitmap = bitmap.asImageBitmap(),
                                             contentDescription = "Foto Bukti Piket",
@@ -354,7 +355,6 @@ fun DetailRiwayatPiketScreen(
                                         )
                                     }
                                     else -> {
-                                        // Jika gagal decode, tampilkan placeholder error
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth()
@@ -391,28 +391,6 @@ fun DetailRiwayatPiketScreen(
         }
     }
     
-    // Menu drawer
-    MenuDrawer(
-        isVisible = isMenuVisible,
-        onDismiss = { isMenuVisible = false },
-        userName = loggedInUserName ?: "Pengurus",
-        userRole = "Sekretaris Umum",
-        onProfileClick = {
-            isMenuVisible = false
-            navController.navigate("profile")
-        },
-        onAboutClick = {
-            isMenuVisible = false
-            navController.navigate("about")
-        },
-        onLogoutClick = {
-            isMenuVisible = false
-            sessionManager.clearSession()
-            navController.navigate("login") {
-                popUpTo("home") { inclusive = true }
-            }
-        }
-    )
 }
 
 @Composable

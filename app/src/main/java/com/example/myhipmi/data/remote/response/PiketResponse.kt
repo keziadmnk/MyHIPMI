@@ -1,8 +1,6 @@
 package com.example.myhipmi.data.remote.response
 
 import com.google.gson.annotations.SerializedName
-
-// Response untuk create absen piket
 data class AbsenPiketResponse(
     @SerializedName("success")
     val success: Boolean,
@@ -14,7 +12,6 @@ data class AbsenPiketResponse(
     val data: AbsenPiketData?
 )
 
-// Data absen piket
 data class AbsenPiketData(
     @SerializedName("id_absen_piket")
     val idAbsenPiket: Int,
@@ -69,7 +66,6 @@ data class JadwalData(
     val hariPiket: String
 )
 
-// Request untuk membuat absen piket
 data class CreateAbsenPiketRequest(
     @SerializedName("id_pengurus")
     val idPengurus: Int,
@@ -93,7 +89,6 @@ data class CreateAbsenPiketRequest(
     val fotoBukti: String
 )
 
-// Response untuk list absen piket
 data class AbsenPiketListResponse(
     @SerializedName("success")
     val success: Boolean,

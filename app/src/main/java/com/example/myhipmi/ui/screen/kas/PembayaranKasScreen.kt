@@ -56,8 +56,8 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.myhipmi.data.local.UserSessionManager
 import com.example.myhipmi.ui.components.MyHipmiTopBar
-import com.example.myhipmi.ui.theme.KasAccentGreen
-import com.example.myhipmi.ui.theme.KasDarkGreen
+import com.example.myhipmi.ui.theme.GreenPrimary
+import com.example.myhipmi.ui.theme.GreenPrimary
 import com.example.myhipmi.ui.theme.KasScreenBackground
 import com.example.myhipmi.ui.theme.MyHIPMITheme
 import com.example.myhipmi.ui.viewmodel.KasState
@@ -75,8 +75,7 @@ fun PembayaranKasScreen(
     var deskripsi by remember { mutableStateOf("") }
     var nominalString by remember { mutableStateOf("") }
     var fileUri by remember { mutableStateOf<Uri?>(null) }
-    
-    // User Session
+
     val userSession = remember { UserSessionManager(context) }
     var userId by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
@@ -86,8 +85,6 @@ fun PembayaranKasScreen(
     }
 
     val kasState by viewModel.kasState.collectAsState()
-
-    // Camera & Gallery Launchers
     var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -102,8 +99,6 @@ fun PembayaranKasScreen(
     ) { uri: Uri? ->
         uri?.let { fileUri = it }
     }
-
-    // Effect untuk menangani hasil submit
     LaunchedEffect(kasState) {
         when (kasState) {
             is KasState.Success -> {
@@ -134,12 +129,10 @@ fun PembayaranKasScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            
-            // Field untuk Nominal
             Text(
                 text = "Nominal Pembayaran",
                 fontWeight = FontWeight.Medium,
-                color = KasDarkGreen,
+                color = GreenPrimary,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             OutlinedTextField(
@@ -152,18 +145,16 @@ fun PembayaranKasScreen(
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
-                    focusedIndicatorColor = KasAccentGreen,
+                    focusedIndicatorColor = GreenPrimary,
                     unfocusedIndicatorColor = Color.LightGray
                 )
             )
 
             Spacer(modifier = Modifier.height(24.dp))
-
-            // Field untuk deskripsi
             Text(
                 text = "Deskripsi / Bulan",
                 fontWeight = FontWeight.Medium,
-                color = KasDarkGreen,
+                color = GreenPrimary,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             OutlinedTextField(
@@ -175,18 +166,16 @@ fun PembayaranKasScreen(
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
-                    focusedIndicatorColor = KasAccentGreen,
+                    focusedIndicatorColor = GreenPrimary,
                     unfocusedIndicatorColor = Color.LightGray
                 )
             )
 
             Spacer(modifier = Modifier.height(24.dp))
-
-            // Area untuk upload bukti pembayaran
             Text(
                 text = "Upload Bukti Pembayaran",
                 fontWeight = FontWeight.Medium,
-                color = KasDarkGreen,
+                color = GreenPrimary,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             Box(
@@ -214,7 +203,7 @@ fun PembayaranKasScreen(
                         Icon(
                             imageVector = Icons.Default.PhotoCamera,
                             contentDescription = "Camera Icon",
-                            tint = KasDarkGreen,
+                            tint = GreenPrimary,
                             modifier = Modifier.size(40.dp)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -236,8 +225,8 @@ fun PembayaranKasScreen(
                         cameraLauncher.launch(uri)
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = KasAccentGreen,
-                        contentColor = KasDarkGreen
+                        containerColor = GreenPrimary,
+                        contentColor = GreenPrimary
                     ),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.weight(1f).padding(end = 4.dp)
@@ -250,8 +239,8 @@ fun PembayaranKasScreen(
                         galleryLauncher.launch("image/*")
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = KasAccentGreen,
-                        contentColor = KasDarkGreen
+                        containerColor = GreenPrimary,
+                        contentColor = GreenPrimary
                     ),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.weight(1f).padding(start = 4.dp)
@@ -261,8 +250,6 @@ fun PembayaranKasScreen(
             }
 
             Spacer(modifier = Modifier.weight(1f))
-
-            // Tombol Kirim
             Button(
                 onClick = { 
                     if (userId == 0) {
@@ -289,7 +276,7 @@ fun PembayaranKasScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = kasState !is KasState.Loading,
-                colors = ButtonDefaults.buttonColors(containerColor = KasDarkGreen),
+                colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 if (kasState is KasState.Loading) {

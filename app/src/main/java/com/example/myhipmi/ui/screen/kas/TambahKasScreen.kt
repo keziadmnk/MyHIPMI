@@ -17,8 +17,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.myhipmi.data.local.UserSessionManager
 import com.example.myhipmi.ui.components.MyHipmiTopBar
-import com.example.myhipmi.ui.theme.KasAccentGreen
-import com.example.myhipmi.ui.theme.KasDarkGreen
+import com.example.myhipmi.ui.theme.GreenPrimary
 import com.example.myhipmi.ui.viewmodel.KasState
 import com.example.myhipmi.ui.viewmodel.KasViewModel
 
@@ -41,14 +40,10 @@ fun TambahKasScreen(
     }
 
     val kasState by viewModel.kasState.collectAsState()
-
-    // Gunakan LaunchedEffect yang lebih robust untuk menangani navigasi sekali jalan
     LaunchedEffect(kasState) {
         when (val currentState = kasState) {
             is KasState.Success -> {
-                // Kirim sinyal DULU
                 navController.previousBackStackEntry?.savedStateHandle?.set("kas_action_message", currentState.message)
-                // Baru reset state & navigasi
                 viewModel.resetState()
                 navController.popBackStack()
             }
@@ -79,7 +74,7 @@ fun TambahKasScreen(
             Text(
                 text = "Nominal Tagihan",
                 fontWeight = FontWeight.Medium,
-                color = KasDarkGreen,
+                color = GreenPrimary,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             OutlinedTextField(
@@ -94,7 +89,7 @@ fun TambahKasScreen(
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
-                    focusedIndicatorColor = KasAccentGreen,
+                    focusedIndicatorColor = GreenPrimary,
                     unfocusedIndicatorColor = Color.LightGray
                 )
             )
@@ -104,7 +99,7 @@ fun TambahKasScreen(
             Text(
                 text = "Deskripsi / Bulan",
                 fontWeight = FontWeight.Medium,
-                color = KasDarkGreen,
+                color = GreenPrimary,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             OutlinedTextField(
@@ -116,7 +111,7 @@ fun TambahKasScreen(
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
-                    focusedIndicatorColor = KasAccentGreen,
+                    focusedIndicatorColor = GreenPrimary,
                     unfocusedIndicatorColor = Color.LightGray
                 )
             )
@@ -149,7 +144,7 @@ fun TambahKasScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = kasState !is KasState.Loading,
-                colors = ButtonDefaults.buttonColors(containerColor = KasDarkGreen),
+                colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 if (kasState is KasState.Loading) {

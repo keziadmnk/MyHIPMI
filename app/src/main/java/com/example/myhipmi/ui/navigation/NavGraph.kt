@@ -37,30 +37,22 @@ fun NavGraph(navController: NavHostController) {
         navController = navController,
         startDestination = "landing"
     ) {
-        // === Landing Page ===
         composable("landing") {
             LandingPage(
                 onNavigateToLogin = { navController.navigate("login") }
             )
         }
-
-
-        // === Login Page ===
         composable("login") {
             LoginPage(
                 onLoginSuccess = { navController.navigate("home") },
                 onBack = { navController.popBackStack() }
             )
         }
-
-        // === Home ===
         composable("home") {
             HomeScreen(
                 navController = navController
             )
         }
-
-        // === Menu utama ===
         composable("kas") {
             KasScreen(
                 navController = navController,
@@ -77,8 +69,6 @@ fun NavGraph(navController: NavHostController) {
         composable("tambah_kas") {
             TambahKasScreen(navController = navController)
         }
-        
-        // Rute untuk Bayar Tagihan (Khusus Pending)
         composable(
             route = "bayar_tagihan/{kasId}",
             arguments = listOf(
@@ -88,8 +78,6 @@ fun NavGraph(navController: NavHostController) {
             val kasId = backStackEntry.arguments?.getInt("kasId") ?: 0
             BayarTagihanScreen(navController = navController, kasId = kasId)
         }
-        
-        // Rute untuk Detail/Edit Kas (Khusus Lunas/History)
         composable(
             route = "edit_kas/{kasId}",
             arguments = listOf(
@@ -113,8 +101,6 @@ fun NavGraph(navController: NavHostController) {
             DetailRiwayatPiketScreen(navController = navController, idAbsenPiket = idAbsenPiket)
         }
         composable("event") { EventScreen(navController) }
-
-        // === Add screens ===
         composable("add_event") { AddEventScreen(navController) }
         composable("add_rapat") { AddRapatScreen(navController) }
         composable("profile") {
@@ -124,9 +110,6 @@ fun NavGraph(navController: NavHostController) {
         composable("about") {
             AboutScreen(navController = navController)
         }
-
-
-        // === Detail Rapat ===
         composable(
             route = "rapat_detail/{idAgenda}/{title}/{date}/{startTime}/{endTime}/{location}/{isDone}",
             arguments = listOf(
@@ -141,8 +124,7 @@ fun NavGraph(navController: NavHostController) {
         ) { backStackEntry: NavBackStackEntry ->
             RapatDetailScreen(navController, backStackEntry)
         }
-        
-        // === Edit Rapat ===
+
         composable(
             route = "edit_rapat/{idAgenda}",
             arguments = listOf(
@@ -153,17 +135,13 @@ fun NavGraph(navController: NavHostController) {
             EditRapatScreen(navController = navController, idAgenda = idAgenda)
         }
 
-        // === Detail Event ===
         composable(
             "detail_event/{eventId}",
             arguments = listOf(
                 navArgument("eventId") { type = NavType.IntType }
             )
         ) { backStackEntry ->
-            // Ambil ID Event dari argumen, default ke 0 jika tidak ada (untuk keamanan)
             val eventId = backStackEntry.arguments?.getInt("eventId") ?: 0
-
-            // Panggil DetailEventScreen dan kirimkan eventId
             DetailEventScreen(navController = navController, eventId = eventId)
         }
         composable(
@@ -175,8 +153,6 @@ fun NavGraph(navController: NavHostController) {
             val eventId = backStackEntry.arguments?.getInt("eventId") ?: 0
             EditEventScreen(navController = navController, eventId = eventId)
         }
-        
-        // === Notification Screen ===
         composable("notifications") {
             NotificationScreen(navController = navController)
         }

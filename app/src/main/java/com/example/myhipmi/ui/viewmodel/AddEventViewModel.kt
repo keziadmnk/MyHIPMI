@@ -34,7 +34,6 @@ class AddEventViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             try {
-                // Build poster part
                 val posterPart: MultipartBody.Part? = fileUri?.let { uri ->
                     val file: File = FileUtil.from(context, uri)
                     val requestFile = file.asRequestBody("image/*".toMediaType())

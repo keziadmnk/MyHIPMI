@@ -58,11 +58,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.myhipmi.data.local.UserSessionManager
 import com.example.myhipmi.data.remote.response.KasItem
-import com.example.myhipmi.ui.components.MenuDrawer
+
 import com.example.myhipmi.ui.components.MyHipmiTopBar
 import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
-import com.example.myhipmi.ui.theme.KasAccentGreen
-import com.example.myhipmi.ui.theme.KasDarkGreen
+import com.example.myhipmi.ui.theme.GreenPrimary
 import com.example.myhipmi.ui.theme.MyHIPMITheme
 import com.example.myhipmi.ui.theme.StatusBelum
 import com.example.myhipmi.ui.theme.StatusLunas
@@ -86,8 +85,7 @@ fun KasScreen(
     var userId by remember { mutableIntStateOf(0) }
     var userName by remember { mutableStateOf("") }
     var userRole by remember { mutableStateOf("") }
-    
-    // Ambil data user dari session
+
     LaunchedEffect(Unit) {
         userSession.userId.collect { id ->
             if (id != null) {
@@ -102,12 +100,9 @@ fun KasScreen(
     LaunchedEffect(Unit) {
         userSession.userRole.collect { role -> userRole = role ?: "Anggota" }
     }
-    
-    // Listen for results from Add Screen (Konfirmasi data ditambahkan)
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val savedStateHandle = navBackStackEntry?.savedStateHandle
-    
-    // Periksa apakah ada flag sukses dari screen sebelumnya
     val addKasSuccess = savedStateHandle?.get<Boolean>("add_kas_success")
     val paymentSuccess = savedStateHandle?.get<Boolean>("payment_success")
     val kasActionMessage = savedStateHandle?.get<String>("kas_action_message")
@@ -133,7 +128,7 @@ fun KasScreen(
     val kasList by viewModel.kasList.collectAsState()
     val kasState by viewModel.kasState.collectAsState()
 
-    var isMenuVisible by remember { mutableStateOf(false) }
+
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Tagihan / Pending", "Riwayat Lunas")
     
@@ -143,10 +138,8 @@ fun KasScreen(
                 MyHipmiTopBar(
                     title = "Kas Saya",
                     onBackClick = { (navController as NavHostController).popBackStack() },
-                    onMenuClick = { isMenuVisible = true },
                     onNotificationClick = { (navController as NavHostController).navigate("notifications") },
                     actions = {
-                        // Tombol Test Notifikasi Kas
                         IconButton(onClick = { 
                             KasNotificationHelper.showKasNotification(context)
                             Toast.makeText(context, "Notifikasi Kas Dikirim", Toast.LENGTH_SHORT).show()
@@ -154,7 +147,7 @@ fun KasScreen(
                             Icon(
                                 imageVector = Icons.Default.NotificationsActive,
                                 contentDescription = "Test Notification",
-                                tint = KasDarkGreen
+                                tint = GreenPrimary
                             )
                         }
                     }
@@ -185,11 +178,11 @@ fun KasScreen(
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
                     containerColor = Color.White,
-                    contentColor = KasDarkGreen,
+                    contentColor = GreenPrimary,
                     indicator = { tabPositions ->
                         androidx.compose.material3.TabRowDefaults.Indicator(
                             modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                            color = KasDarkGreen
+                            color = GreenPrimary
                         )
                     }
                 ) {
@@ -206,14 +199,12 @@ fun KasScreen(
 
                 if (kasState is KasState.Loading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = KasDarkGreen)
+                        CircularProgressIndicator(color = GreenPrimary)
                     }
                 } else {
                     val filteredTransactions = if (selectedTabIndex == 0) {
-                        // Pending atau Belum Lunas
                         kasList.filter { it.status.equals("pending", ignoreCase = true) || it.status.equals("ditolak", ignoreCase = true) }
                     } else {
-                        // Riwayat (Lunas)
                         kasList.filter { it.status.equals("lunas", ignoreCase = true) }
                     }
 
@@ -235,10 +226,8 @@ fun KasScreen(
                                     transaction = transaction,
                                     onClick = {
                                         if (transaction.status.equals("lunas", ignoreCase = true)) {
-                                            // Jika lunas, lihat detail (read-only)
                                             navController.navigate("edit_kas/${transaction.id}")
                                         } else {
-                                            // Jika pending/ditolak, masuk ke halaman Bayar
                                             navController.navigate("bayar_tagihan/${transaction.id}")
                                         }
                                     }
@@ -247,47 +236,25 @@ fun KasScreen(
                         }
                     }
                 }
-                
-                // Tombol Actions
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
-                // Tombol Tambah Tagihan
                 Button(
                     onClick = { 
                         navController.navigate("tambah_kas")
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = KasAccentGreen),
+                    colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, tint = KasDarkGreen)
+                    Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Buat Tagihan", color = KasDarkGreen, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("Buat Tagihan", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
-    
-        // Menu Drawer
-        MenuDrawer(
-            isVisible = isMenuVisible,
-            onDismiss = { isMenuVisible = false },
-            userName = userName,
-            userRole = userRole,
-            onProfileClick = {
-                isMenuVisible = false
-                (navController as NavHostController).navigate("profile")
-            },
-            onAboutClick = {
-                isMenuVisible = false
-                (navController as NavHostController).navigate("about")
-            },
-            onLogoutClick = {
-                isMenuVisible = false
-                // TODO: Handle logout
-            }
-        )
+
     }
 }
 
@@ -318,9 +285,9 @@ fun KasItemCard(transaction: KasItem, onClick: () -> Unit) {
                 val isDitolak = transaction.status.equals("ditolak", ignoreCase = true)
                 
                 val (backgroundColor, textColor) = when {
-                    isLunas -> StatusLunas to KasDarkGreen
+                    isLunas -> StatusLunas to GreenPrimary
                     isDitolak -> Color.Red.copy(alpha = 0.2f) to Color.Red
-                    else -> StatusBelum to Color(0xFFFFA500) // Orange untuk Pending
+                    else -> StatusBelum to Color(0xFFFFA500) 
                 }
                 
                 Box(

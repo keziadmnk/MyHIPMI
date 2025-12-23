@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myhipmi.ui.components.MyHipmiTopBar
-import com.example.myhipmi.ui.components.MenuDrawer
+
 import com.example.myhipmi.ui.theme.GreenMain
 import com.example.myhipmi.ui.theme.GreenPrimary
 import com.example.myhipmi.ui.theme.White
@@ -42,18 +42,10 @@ fun AddRapatScreen(navController: NavHostController) {
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val successMessage by viewModel.successMessage.collectAsState()
-
-    // Ambil context dan session manager
     val context = LocalContext.current
     val sessionManager = remember { UserSessionManager(context) }
-
-    // Ambil data user yang login (nullable — jangan pakai fallback hardcoded)
     val loggedInUserId = sessionManager.getIdPengurus()
     val loggedInUserName = sessionManager.getNamaPengurus()
-
-    var isMenuVisible by remember { mutableStateOf(false) }
-    
-    // State input form
     var namaRapat by remember { mutableStateOf("") }
     var tanggal by remember { mutableStateOf("") }
     var dateSelectedMillis by remember { mutableStateOf(0L) }
@@ -62,44 +54,34 @@ fun AddRapatScreen(navController: NavHostController) {
     var lokasi by remember { mutableStateOf("") }
     var deskripsi by remember { mutableStateOf("") }
 
-    // Date and Time Picker states
     var showDatePicker by remember { mutableStateOf(false) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
 
-    // DatePicker dengan constraint tidak bisa pilih tanggal masa lalu
     val currentTimeMillis = remember { System.currentTimeMillis() }
     val datePickerState = rememberDatePickerState(
         initialDisplayedMonthMillis = currentTimeMillis,
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                // Hanya izinkan tanggal hari ini atau masa depan
-                return utcTimeMillis >= currentTimeMillis - 86400000L // -1 hari untuk toleransi timezone
+                return utcTimeMillis >= currentTimeMillis - 86400000L
             }
         }
     )
     val startTimePickerState = rememberTimePickerState()
     val endTimePickerState = rememberTimePickerState()
-
-    // Snackbar state
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-
-    // Animation state
     var isVisible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay(100)
         isVisible = true
     }
 
-    // Handle success/error messages
     LaunchedEffect(successMessage, errorMessage) {
         successMessage?.let {
-            // Langsung navigate - RapatScreen akan baca successMessage dari ViewModel
             navController.navigate("rapat") {
                 popUpTo("rapat") { inclusive = true }
             }
-            // JANGAN clear message di sini, biar RapatScreen yang baca dulu
         }
         errorMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -112,8 +94,7 @@ fun AddRapatScreen(navController: NavHostController) {
             topBar = {
                 MyHipmiTopBar(
                     title = "Rapat",
-                    onBackClick = { navController.popBackStack() },
-                    onMenuClick = { isMenuVisible = true }
+                    onBackClick = { navController.popBackStack() }
                 )
             },
             snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -126,7 +107,6 @@ fun AddRapatScreen(navController: NavHostController) {
                 .padding(horizontal = 20.dp),
             contentPadding = PaddingValues(vertical = 16.dp)
         ) {
-            // Header
             item {
                 AnimatedVisibility(
                     visible = isVisible,
@@ -149,8 +129,6 @@ fun AddRapatScreen(navController: NavHostController) {
                     }
                 }
             }
-
-            // Error Message
             item {
                 AnimatedVisibility(
                     visible = !errorMessage.isNullOrBlank(),
@@ -184,10 +162,6 @@ fun AddRapatScreen(navController: NavHostController) {
                     }
                 }
             }
-
-            // Success Message dihapus - langsung navigate (no duplicate)
-
-            // Input Fields with animation
             item {
                 AnimatedVisibility(
                     visible = isVisible,
@@ -247,8 +221,6 @@ fun AddRapatScreen(navController: NavHostController) {
                     }
                 }
             }
-
-            // Tombol "Batal" dan "Buat"
             item {
                 AnimatedVisibility(
                     visible = isVisible,
@@ -283,7 +255,6 @@ fun AddRapatScreen(navController: NavHostController) {
 
                         Button(
                             onClick = {
-                                // Validasi input
                                 if (namaRapat.isBlank()) {
                                     scope.launch {
                                         snackbarHostState.showSnackbar("Nama rapat harus diisi")
@@ -314,8 +285,6 @@ fun AddRapatScreen(navController: NavHostController) {
                                     }
                                     return@Button
                                 }
-
-                                // Pastikan user sudah login
                                 if (loggedInUserId == null) {
                                     scope.launch {
                                         snackbarHostState.showSnackbar("Anda belum login. Silakan login terlebih dahulu.")
@@ -323,9 +292,8 @@ fun AddRapatScreen(navController: NavHostController) {
                                     navController.navigate("login")
                                     return@Button
                                 }
-
-                                // Simpan data rapat baru ke backend
                                 viewModel.createAgenda(
+                                    context = context,
                                     idPengurus = loggedInUserId,
                                     title = namaRapat,
                                     creatorId = loggedInUserId,
@@ -373,8 +341,6 @@ fun AddRapatScreen(navController: NavHostController) {
             }
         }
     }
-    
-        // DatePicker Dialog
         if (showDatePicker) {
             DatePickerDialog(
                 onDismissRequest = { showDatePicker = false },
@@ -408,8 +374,6 @@ fun AddRapatScreen(navController: NavHostController) {
                 )
             }
         }
-
-        // Start Time Picker Dialog
         if (showStartTimePicker) {
             TimePickerDialog(
                 onDismissRequest = { showStartTimePicker = false },
@@ -442,8 +406,6 @@ fun AddRapatScreen(navController: NavHostController) {
                 )
             }
         }
-
-        // End Time Picker Dialog
         if (showEndTimePicker) {
             TimePickerDialog(
                 onDismissRequest = { showEndTimePicker = false },
@@ -452,8 +414,6 @@ fun AddRapatScreen(navController: NavHostController) {
                         onClick = {
                             val hour = endTimePickerState.hour
                             val minute = endTimePickerState.minute
-                            
-                            // Validasi: waktu selesai tidak boleh kurang dari waktu mulai
                             if (startTime.isNotBlank()) {
                                 val startParts = startTime.replace(" WIB", "").split(":")
                                 val startHour = startParts[0].toInt()
@@ -496,27 +456,5 @@ fun AddRapatScreen(navController: NavHostController) {
             }
         }
 
-        // Menu Drawer (tampilan nama diambil dari session, gunakan placeholder netral jika null)
-        MenuDrawer(
-            isVisible = isMenuVisible,
-            onDismiss = { isMenuVisible = false },
-            userName = loggedInUserName ?: "Pengurus",
-            userRole = "Sekretaris Umum",
-            onProfileClick = {
-                isMenuVisible = false
-                navController.navigate("profile")
-            },
-            onAboutClick = {
-                isMenuVisible = false
-                navController.navigate("about")
-            },
-            onLogoutClick = {
-                isMenuVisible = false
-                sessionManager.clearSession()
-                navController.navigate("login") {
-                    popUpTo("home") { inclusive = true }
-                }
-            }
-        )
     }
 }

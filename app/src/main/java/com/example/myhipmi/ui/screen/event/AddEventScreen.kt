@@ -33,7 +33,7 @@ import com.example.myhipmi.data.local.UserSessionManager
 import com.example.myhipmi.data.remote.request.EventRequest
 import com.example.myhipmi.data.remote.retrofit.ApiConfig
 import com.example.myhipmi.ui.components.MyHipmiTopBar
-import com.example.myhipmi.ui.components.MenuDrawer
+
 import com.example.myhipmi.ui.theme.GreenPrimary
 import com.example.myhipmi.ui.theme.White
 import kotlinx.coroutines.delay
@@ -47,13 +47,14 @@ import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import com.example.myhipmi.utils.FileUtil
 import com.example.myhipmi.utils.toPlainRequestBody
+import com.example.myhipmi.utils.EventNotificationHelper
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 
 @Composable
 fun AddEventScreen(navController: NavHostController) {
-    var isMenuVisible by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
     val sessionManager = remember { UserSessionManager(context) }
     val calendar = remember { Calendar.getInstance() }
@@ -63,8 +64,7 @@ fun AddEventScreen(navController: NavHostController) {
             topBar = {
                 MyHipmiTopBar(
                     title = "Event",
-                    onBackClick = { navController.popBackStack() },
-                    onMenuClick = { isMenuVisible = true }
+                    onBackClick = { navController.popBackStack() }
                 )
             },
 
@@ -104,8 +104,6 @@ fun AddEventScreen(navController: NavHostController) {
                     { _, year, month, dayOfMonth ->
                         val selectedCalendar = Calendar.getInstance()
                         selectedCalendar.set(year, month, dayOfMonth)
-                        
-                        // Validasi: Cek apakah tanggal di masa lalu
                         val today = Calendar.getInstance()
                         today.set(Calendar.HOUR_OF_DAY, 0)
                         today.set(Calendar.MINUTE, 0)
@@ -130,7 +128,6 @@ fun AddEventScreen(navController: NavHostController) {
                     calendar.get(Calendar.MONTH),
                     calendar.get(Calendar.DAY_OF_MONTH)
                 ).apply {
-                    // Set minimum date to today
                     datePicker.minDate = System.currentTimeMillis()
                 }
             }
@@ -157,7 +154,6 @@ fun AddEventScreen(navController: NavHostController) {
                     .padding(horizontal = 20.dp),
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
-                // Header
                 item {
                     AnimatedVisibility(
                         visible = isVisible,
@@ -180,8 +176,6 @@ fun AddEventScreen(navController: NavHostController) {
                         }
                     }
                 }
-
-                // Error Message
                 item {
                     AnimatedVisibility(
                         visible = !errorMessage.isNullOrBlank(),
@@ -215,8 +209,6 @@ fun AddEventScreen(navController: NavHostController) {
                         }
                     }
                 }
-
-                // Success Message
                 item {
                     AnimatedVisibility(
                         visible = !successMessage.isNullOrBlank(),
@@ -250,8 +242,6 @@ fun AddEventScreen(navController: NavHostController) {
                         }
                     }
                 }
-
-                // Input Fields with animation
                 item {
                     AnimatedVisibility(
                         visible = isVisible,
@@ -323,8 +313,6 @@ fun AddEventScreen(navController: NavHostController) {
                         }
                     }
                 }
-
-                // Kolom Upload File
                 item {
                     AnimatedVisibility(
                         visible = isVisible,
@@ -341,8 +329,6 @@ fun AddEventScreen(navController: NavHostController) {
                         }
                     }
                 }
-
-                // Tombol "Tambah"
                 item {
                     AnimatedVisibility(
                         visible = isVisible,
@@ -377,7 +363,6 @@ fun AddEventScreen(navController: NavHostController) {
                                 Button(
                                     onClick = {
                                         android.util.Log.d("AddEventScreen", "Button clicked!")
-                                        // Validasi input wajib
                                         errorMessage = null
                                         successMessage = null
                                         
@@ -390,8 +375,6 @@ fun AddEventScreen(navController: NavHostController) {
                                             android.util.Log.d("AddEventScreen", "Validation failed: missing required fields")
                                             return@Button
                                         }
-
-                                        // Validasi id_pengurus
                                         if (idPengurus == null) {
                                             errorMessage = "Anda belum login. Silakan login terlebih dahulu."
                                             android.util.Log.d("AddEventScreen", "Validation failed: idPengurus is null")
@@ -460,6 +443,13 @@ fun AddEventScreen(navController: NavHostController) {
                                                     
                                                     successMessage = "Event berhasil ditambahkan${if (posterUrl != null) " dengan foto" else ""}"
                                                     Toast.makeText(context, "Event berhasil ditambahkan", Toast.LENGTH_SHORT).show()
+                                                    EventNotificationHelper.showEventNotification(
+                                                        context = context,
+                                                        eventName = namaEvent,
+                                                        eventDate = tanggal,
+                                                        eventLocation = tempat
+                                                    )
+                                                    
                                                     delay(1000)
                                                     navController.navigate("event") {
 
@@ -517,27 +507,6 @@ fun AddEventScreen(navController: NavHostController) {
                     }
                 }
 
-            MenuDrawer(
-                isVisible = isMenuVisible,
-                onDismiss = { isMenuVisible = false },
-                userName = sessionManager.getNamaPengurus() ?: "Pengurus",
-                userRole = "Sekretaris Umum",
-                onProfileClick = {
-                    isMenuVisible = false
-                    navController.navigate("profile")
-                },
-                onAboutClick = {
-                    isMenuVisible = false
-                    navController.navigate("about")
-                },
-                onLogoutClick = {
-                    isMenuVisible = false
-                    sessionManager.clearSession()
-                    navController.navigate("login") {
-                        popUpTo("home") { inclusive = true }
-                    }
-                }
-            )
         }
     }
 }
@@ -638,8 +607,6 @@ fun AddEventScreen(navController: NavHostController) {
             }
         }
     }
-
-
         @Composable
         fun ModernTextField(
             label: String,
@@ -676,7 +643,6 @@ fun AddEventScreen(navController: NavHostController) {
                         )
                     }
                 }
-
 
                 if (onClick != null) {
                     Box(

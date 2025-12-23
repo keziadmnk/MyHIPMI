@@ -18,13 +18,12 @@ import com.example.myhipmi.utils.PiketNotificationHelper
 import com.example.myhipmi.worker.KasNotificationWorker
 import com.example.myhipmi.worker.PiketNotificationWorker
 import com.google.firebase.messaging.FirebaseMessaging
+import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // Subscribe ke topic 'events' untuk menerima notifikasi
         FirebaseMessaging.getInstance().subscribeToTopic("events")
             .addOnCompleteListener { task ->
                 var msg = "Subscribed to events topic"
@@ -33,8 +32,6 @@ class MainActivity : ComponentActivity() {
                 }
                 Log.d("FCM", msg)
             }
-        
-        // Subscribe ke topic 'agenda_rapat' untuk menerima notifikasi agenda rapat
         FirebaseMessaging.getInstance().subscribeToTopic("agenda_rapat")
             .addOnCompleteListener { task ->
                 var msg = "Subscribed to agenda_rapat topic"
@@ -43,8 +40,6 @@ class MainActivity : ComponentActivity() {
                 }
                 Log.d("FCM", msg)
             }
-
-        // Subscribe ke topic 'kas_reminder' untuk menerima notifikasi reminder kas
         FirebaseMessaging.getInstance().subscribeToTopic("kas_reminder")
             .addOnCompleteListener { task ->
                 var msg = "Subscribed to kas_reminder topic"
@@ -53,23 +48,11 @@ class MainActivity : ComponentActivity() {
                 }
                 Log.d("FCM", msg)
             }
-        
-        // Setup notification channel untuk piket
+
         PiketNotificationHelper.createNotificationChannel(this)
-        
-        // Setup notification channel untuk kas
         KasNotificationHelper.createNotificationChannel(this)
-        
-        // Schedule periodic work untuk check piket setiap hari jam 6 pagi
         schedulePiketNotification()
-        
-        // Schedule periodic work untuk check kas (misal setiap hari cek tanggal)
         scheduleKasNotification()
-        
-        // UNCOMMENT BARIS INI UNTUK TEST NOTIFIKASI LANGSUNG (untuk testing)
-        // testPiketNotification()
-        testKasNotification() // <-- Testing notifikasi kas
-        
         setContent {
             MyHIPMITheme {
                 MyHipmiApp()
@@ -78,28 +61,39 @@ class MainActivity : ComponentActivity() {
     }
     
     private fun schedulePiketNotification() {
-        // Constraints: butuh network dan device tidak dalam battery saver mode
         val constraints = Constraints.Builder()
             .setRequiresCharging(false)
             .setRequiresBatteryNotLow(false)
             .build()
+        val currentTime = Calendar.getInstance()
+        val targetTime = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 35)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            if (before(currentTime)) {
+                add(Calendar.DAY_OF_MONTH, 1)
+            }
+        }
         
-        // Periodic work request - check setiap hari jam 6 pagi
-        // WorkManager akan menjalankan worker setiap 24 jam sekali
+        val initialDelayMillis = targetTime.timeInMillis - currentTime.timeInMillis
+        val initialDelayMinutes = TimeUnit.MILLISECONDS.toMinutes(initialDelayMillis)
+        
+        Log.d("MainActivity", "Piket notification will trigger at: ${targetTime.time}")
+        Log.d("MainActivity", "Initial delay: $initialDelayMinutes minutes")
         val workRequest = PeriodicWorkRequestBuilder<PiketNotificationWorker>(
             24, TimeUnit.HOURS
         )
             .setConstraints(constraints)
+            .setInitialDelay(initialDelayMinutes, TimeUnit.MINUTES)
             .build()
-        
-        // Enqueue dengan unique name agar tidak duplicate
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "piket_notification_work",
-            ExistingPeriodicWorkPolicy.KEEP,
+            ExistingPeriodicWorkPolicy.REPLACE,
             workRequest
         )
         
-        Log.d("MainActivity", "Piket notification work scheduled")
+        Log.d("MainActivity", "Piket notification work scheduled for 00:35 daily")
     }
 
     private fun scheduleKasNotification() {
@@ -107,8 +101,6 @@ class MainActivity : ComponentActivity() {
             .setRequiresCharging(false)
             .setRequiresBatteryNotLow(false)
             .build()
-
-        // Cek setiap hari apakah sudah waktunya bayar kas
         val workRequest = PeriodicWorkRequestBuilder<KasNotificationWorker>(
             24, TimeUnit.HOURS
         )
@@ -121,16 +113,13 @@ class MainActivity : ComponentActivity() {
             workRequest
         )
     }
-    
-    // Fungsi untuk test notifikasi langsung (untuk debugging)
+
     private fun testPiketNotification() {
-        Log.d("MainActivity", "🧪 Testing piket notification...")
-        
-        // Test 1: Langsung show notifikasi (tanpa check hari)
+        Log.d("MainActivity", "Testing piket notification...")
+
         PiketNotificationHelper.showPiketNotification(this)
-        Log.d("MainActivity", "✅ Test notification sent directly")
-        
-        // Test 2: Jalankan worker sekali untuk test
+        Log.d("MainActivity", "Test notification sent directly")
+
         val testWorkRequest = OneTimeWorkRequestBuilder<PiketNotificationWorker>()
             .build()
         WorkManager.getInstance(this).enqueue(testWorkRequest)
@@ -139,12 +128,8 @@ class MainActivity : ComponentActivity() {
 
     private fun testKasNotification() {
         Log.d("MainActivity", "🧪 Testing kas notification...")
-        
-        // Test 1: Langsung show notifikasi
         KasNotificationHelper.showKasNotification(this)
         Log.d("MainActivity", "✅ Test kas notification sent directly")
-        
-        // Test 2: Jalankan worker sekali untuk test
         val testWorkRequest = OneTimeWorkRequestBuilder<KasNotificationWorker>()
             .build()
         WorkManager.getInstance(this).enqueue(testWorkRequest)

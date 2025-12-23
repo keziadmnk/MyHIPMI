@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.myhipmi.ui.components.MyHipmiTopBar
-import com.example.myhipmi.ui.components.MenuDrawer
+
 import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
 import com.example.myhipmi.ui.theme.*
 import com.example.myhipmi.data.local.UserSessionManager
@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun PiketScreen(navController: NavHostController) {
-    var isMenuVisible by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
     val sessionManager = remember { UserSessionManager(context) }
     val loggedInUserName = sessionManager.getNamaPengurus()
@@ -43,16 +43,10 @@ fun PiketScreen(navController: NavHostController) {
     val apiService = remember { ApiConfig.getApiService() }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    // State untuk hari piket pengurus
     var hariPiket by remember { mutableStateOf<String?>(null) }
     var isLoadingHariPiket by remember { mutableStateOf(true) }
-    
-    // State untuk riwayat piket
     var riwayatPiket by remember { mutableStateOf<List<AbsenPiketData>>(emptyList()) }
     var isLoadingRiwayat by remember { mutableStateOf(false) }
-    
-    // Ambil hari piket pengurus dari database
     LaunchedEffect(loggedInUserId) {
         if (loggedInUserId != null) {
             isLoadingHariPiket = true
@@ -75,14 +69,21 @@ fun PiketScreen(navController: NavHostController) {
             isLoadingHariPiket = false
         }
     }
-    
-    // Format tanggal hari ini untuk filter (YYYY-MM-DD)
     val tanggalHariIniFilter = remember {
         val outputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         outputFormat.format(Date())
     }
-    
-    // Fungsi untuk format tanggal dari database (YYYY-MM-DD) ke format tampilan
+    val hariIni = remember {
+        val dayFormat = SimpleDateFormat("EEEE", Locale("id", "ID"))
+        dayFormat.format(Date())
+    }
+    val isHariPiketSesuai = remember(hariPiket, hariIni) {
+        hariPiket != null && hariPiket.equals(hariIni, ignoreCase = true)
+    }
+    val sudahAbsenHariIni = remember(riwayatPiket, tanggalHariIniFilter) {
+        riwayatPiket.any { it.tanggalAbsen == tanggalHariIniFilter }
+    }
+    val isButtonEnabled = isHariPiketSesuai && !sudahAbsenHariIni
     fun formatTanggal(tanggalDb: String): String {
         return try {
             val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -97,8 +98,7 @@ fun PiketScreen(navController: NavHostController) {
             tanggalDb
         }
     }
-    
-    // Fungsi untuk load riwayat piket (filter berdasarkan tanggal hari ini)
+
     fun loadRiwayatPiket() {
         if (loggedInUserId != null) {
             isLoadingRiwayat = true
@@ -106,7 +106,6 @@ fun PiketScreen(navController: NavHostController) {
                 try {
                     val response = apiService.getAbsenPiketByPengurus(loggedInUserId)
                     if (response.isSuccessful && response.body()?.success == true) {
-                        // Filter hanya absen piket dengan tanggal hari ini
                         val allData = response.body()?.data ?: emptyList()
                         riwayatPiket = allData.filter { it.tanggalAbsen == tanggalHariIniFilter }
                     } else {
@@ -120,21 +119,17 @@ fun PiketScreen(navController: NavHostController) {
             }
         }
     }
-    
-    // Ambil riwayat piket dari database saat pertama kali load
     LaunchedEffect(loggedInUserId) {
         loadRiwayatPiket()
     }
-    
-    // Refresh saat kembali dari screen lain
+
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     LaunchedEffect(currentBackStackEntry) {
         if (currentBackStackEntry?.destination?.route == "piket" && loggedInUserId != null) {
             loadRiwayatPiket()
         }
     }
-    
-    // Format tanggal sekarang
+
     val tanggalSekarang = remember {
         val dateFormat = SimpleDateFormat("EEEE, d MMMM yyyy", Locale("id", "ID"))
         dateFormat.format(Date())
@@ -185,28 +180,28 @@ fun PiketScreen(navController: NavHostController) {
                             fontSize = 22.sp
                         )
                         Spacer(Modifier.height(12.dp))
-
-                        // Kotak pertama: Hari Piket Pengurus
                         PiketHariCard(
                             hariPiket = hariPiket ?: "Belum ditentukan",
                             isLoading = isLoadingHariPiket
                         )
                         
                         Spacer(Modifier.height(12.dp))
-                        
-                        // Kotak kedua: Tanggal Sekarang
                         TodayPiketCard(
                             title = "Piket Hari Ini",
                             tanggal = tanggalSekarang,
+                            isEnabled = isButtonEnabled,
+                            isHariSesuai = isHariPiketSesuai,
+                            sudahAbsen = sudahAbsenHariIni,
+                            hariPiket = hariPiket,
                             onUploadClick = {
-                                navController.navigate("piket/upload")
+                                if (isButtonEnabled) {
+                                    navController.navigate("piket/upload")
+                                }
                             }
                         )
 
                         Spacer(Modifier.height(16.dp))
                     }
-                    
-                    // Judul Riwayat Piket
                     item {
                         Text(
                             text = "Riwayat Piket",
@@ -217,8 +212,6 @@ fun PiketScreen(navController: NavHostController) {
                         )
                         Spacer(Modifier.height(12.dp))
                     }
-
-                    // List riwayat piket dari database
                     if (isLoadingRiwayat) {
                         item {
                             Box(
@@ -264,27 +257,6 @@ fun PiketScreen(navController: NavHostController) {
             }
         }
 
-        MenuDrawer(
-            isVisible = isMenuVisible,
-            onDismiss = { isMenuVisible = false },
-            userName = loggedInUserName ?: "Pengurus",
-            userRole = "Sekretaris Umum",
-            onProfileClick = {
-                isMenuVisible = false
-                navController.navigate("profile")
-            },
-            onAboutClick = {
-                isMenuVisible = false
-                navController.navigate("about")
-            },
-            onLogoutClick = {
-                isMenuVisible = false
-                sessionManager.clearSession()
-                navController.navigate("login") {
-                    popUpTo("home") { inclusive = true }
-                }
-            }
-        )
     }
 }
 
@@ -332,6 +304,10 @@ private fun PiketHariCard(
 private fun TodayPiketCard(
     title: String,
     tanggal: String,
+    isEnabled: Boolean,
+    isHariSesuai: Boolean,
+    sudahAbsen: Boolean,
+    hariPiket: String?,
     onUploadClick: () -> Unit
 ) {
     Card(
@@ -358,14 +334,32 @@ private fun TodayPiketCard(
                 color = TextPrimary,
                 style = MaterialTheme.typography.titleMedium
             )
+            if (!isEnabled) {
+                Spacer(Modifier.height(8.dp))
+                val pesanInfo = when {
+                    sudahAbsen -> "✓ Anda sudah mengisi absen hari ini"
+                    !isHariSesuai && hariPiket != null -> "Hari piket Anda: $hariPiket"
+                    else -> "Tidak dapat mengisi absen"
+                }
+                Text(
+                    text = pesanInfo,
+                    color = if (sudahAbsen) GreenPrimary else TextSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 12.sp
+                )
+            }
+            
             Spacer(Modifier.height(12.dp))
             OutlinedButton(
                 onClick = onUploadClick,
+                enabled = isEnabled,
                 shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, GreenPrimary),
+                border = BorderStroke(1.dp, if (isEnabled) GreenPrimary else TextSecondary.copy(alpha = 0.3f)),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = SecondaryGreen,
-                    contentColor = GreenDark
+                    containerColor = if (isEnabled) SecondaryGreen else TextSecondary.copy(alpha = 0.1f),
+                    contentColor = if (isEnabled) GreenDark else TextSecondary,
+                    disabledContainerColor = TextSecondary.copy(alpha = 0.1f),
+                    disabledContentColor = TextSecondary
                 ),
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
             ) {

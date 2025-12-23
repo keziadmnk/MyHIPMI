@@ -45,22 +45,16 @@ fun NotificationScreen(navController: NavHostController) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isMenuVisible by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    
-    // Fungsi untuk load semua notifikasi (event + piket dari database)
     fun loadAllNotifications() {
         isLoading = true
         scope.launch {
             try {
-                // Load semua notifikasi dari database (termasuk event dan piket)
                 val response = apiService.getNotifications()
                 if (response.isSuccessful) {
                     val notifications = response.body()?.notifications ?: emptyList()
-                    
-                    // Debug: Log first notification timestamp
                     if (notifications.isNotEmpty()) {
                         android.util.Log.d("NotificationScreen", "First notification created_at: ${notifications[0].created_at}")
                     }
-                    
                     allNotifications = notifications.map { 
                         UnifiedNotificationItem(
                             id = it.id_notification,
@@ -68,7 +62,7 @@ fun NotificationScreen(navController: NavHostController) {
                             body = it.body,
                             created_at = it.created_at,
                             type = if (it.title.contains("Piket", ignoreCase = true)) NotificationType.PIKET else NotificationType.EVENT,
-                            idAbsenPiket = null // Notifikasi piket dari database tidak punya idAbsenPiket
+                            idAbsenPiket = null
                         )
                     }.sortedByDescending { 
                         try {
@@ -88,20 +82,15 @@ fun NotificationScreen(navController: NavHostController) {
             }
         }
     }
-
-    // Fetch semua notifikasi saat screen dibuka
     LaunchedEffect(Unit) {
         loadAllNotifications()
     }
-    
-    // Refresh saat kembali dari screen lain
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     LaunchedEffect(currentBackStackEntry) {
         if (currentBackStackEntry?.destination?.route == "notifications") {
             loadAllNotifications()
         }
     }
-
     val gradientBrush = Brush.verticalGradient(
         colors = listOf(
             Color.White,
@@ -112,17 +101,14 @@ fun NotificationScreen(navController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White) // Solid white background
+            .background(Color.White)
     ) {
-        // TopBar
         MyHipmiTopBar(
             title = "Notifikasi",
             onBackClick = { navController.popBackStack() },
             onMenuClick = { isMenuVisible = true },
-            onNotificationClick = { /* Already on notification screen */ }
+            onNotificationClick = { }
         )
-
-        // Content
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -181,8 +167,6 @@ fun NotificationScreen(navController: NavHostController) {
             }
         }
     }
-    
-    // Menu Drawer
     MenuDrawer(
         isVisible = isMenuVisible,
         onDismiss = { isMenuVisible = false },
@@ -205,14 +189,10 @@ fun NotificationScreen(navController: NavHostController) {
         }
     )
 }
-
-// Enum untuk tipe notifikasi
 enum class NotificationType {
     EVENT,
     PIKET
 }
-
-// Data class untuk unified notification
 data class UnifiedNotificationItem(
     val id: Int,
     val title: String,
@@ -230,7 +210,7 @@ fun UnifiedNotificationCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = false, onClick = onClick), // Notifikasi piket tidak perlu diklik
+            .clickable(enabled = false, onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
@@ -243,7 +223,6 @@ fun UnifiedNotificationCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon dengan background hijau
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -262,8 +241,7 @@ fun UnifiedNotificationCard(
             }
             
             Spacer(modifier = Modifier.width(16.dp))
-            
-            // Konten
+
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -282,8 +260,6 @@ fun UnifiedNotificationCard(
             }
             
             Spacer(modifier = Modifier.width(8.dp))
-            
-            // Timestamp
             Text(
                 text = formatTime(notification.created_at),
                 fontSize = 12.sp,
@@ -309,7 +285,6 @@ fun NotificationCard(notification: NotificationItem) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon dengan background hijau
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -328,8 +303,6 @@ fun NotificationCard(notification: NotificationItem) {
             }
             
             Spacer(modifier = Modifier.width(16.dp))
-            
-            // Konten
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -348,8 +321,7 @@ fun NotificationCard(notification: NotificationItem) {
             }
             
             Spacer(modifier = Modifier.width(8.dp))
-            
-            // Timestamp
+
             Text(
                 text = formatTime(notification.created_at),
                 fontSize = 12.sp,
@@ -364,7 +336,6 @@ fun formatTime(dateString: String): String {
     android.util.Log.d("NotificationScreen", "📅 formatTime input: $dateString")
     
     return try {
-        // Coba berbagai format yang mungkin dari backend
         val formats = listOf(
             "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",  // ISO 8601 dengan milliseconds dan Z
             "yyyy-MM-dd'T'HH:mm:ss'Z'",       // ISO 8601 tanpa milliseconds dengan Z
@@ -386,13 +357,11 @@ fun formatTime(dateString: String): String {
                     break
                 }
             } catch (e: Exception) {
-                // Try next format
                 continue
             }
         }
         
         if (date != null) {
-            // Format output hanya jam dan menit (contoh: "07:29")
             val outputFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
             outputFormat.timeZone = TimeZone.getTimeZone("Asia/Jakarta")
             val result = outputFormat.format(date)
@@ -400,7 +369,6 @@ fun formatTime(dateString: String): String {
             result
         } else {
             android.util.Log.w("NotificationScreen", "⚠️ formatTime failed to parse, trying fallback")
-            // Fallback: parsing manual
             fallbackParseTime(dateString)
         }
     } catch (e: Exception) {
@@ -408,8 +376,6 @@ fun formatTime(dateString: String): String {
         fallbackParseTime(dateString)
     }
 }
-
-// Fallback parsing jika SimpleDateFormat gagal
 private fun fallbackParseTime(dateString: String): String {
     return try {
         val parts = dateString.split("T")

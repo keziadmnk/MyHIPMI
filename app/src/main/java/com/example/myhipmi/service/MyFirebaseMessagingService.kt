@@ -23,7 +23,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         Log.d(TAG, "📩 Data payload: ${remoteMessage.data}")
         Log.d(TAG, "📩 Notification payload: ${remoteMessage.notification}")
 
-        // Check if message contains a data payload.
         if (remoteMessage.data.isNotEmpty()) {
             val type = remoteMessage.data["type"]
             val title = remoteMessage.data["title"] ?: "Notifikasi Baru"
@@ -32,11 +31,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             if (type == "kas_reminder") {
                 Log.d(TAG, "💰 Handling Kas Reminder Notification")
                 KasNotificationHelper.showKasReminderNotification(this, title, body)
-                return // Stop here as we handled it specifically
+                return
             }
         }
 
-        // Check if message contains a notification payload.
         remoteMessage.notification?.let {
             val title = it.title ?: "Notifikasi Baru!"
             val body = it.body ?: "Ada notifikasi baru untuk Anda"
@@ -49,8 +47,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         super.onNewToken(token)
         Log.d(TAG, "Refreshed token: $token")
 
-        // Kirim token ke server jika diperlukan
-        // sendRegistrationToServer(token)
     }
 
     private fun showNotification(title: String, message: String) {
@@ -59,7 +55,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notificationId = System.currentTimeMillis().toInt()
 
-        // Buat Channel untuk Android O ke atas
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
@@ -74,7 +69,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             Log.d(TAG, "✅ Notification channel created: $CHANNEL_ID")
         }
 
-        // Intent untuk membuka aplikasi ketika notifikasi diklik
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
@@ -85,15 +79,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Buat notifikasi - SIMPLE configuration seperti piket
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(message)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .setPriority(NotificationCompat.PRIORITY_HIGH) // HIGH bukan MAX
-            .setDefaults(NotificationCompat.DEFAULT_ALL) // Ini yang penting! DEFAULT_ALL untuk sound
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
 
@@ -103,6 +96,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     companion object {
         private const val TAG = "FCMService"
-        private const val CHANNEL_ID = "myhipmi_important_notifications" // GANTI CHANNEL ID BARU!
+        private const val CHANNEL_ID = "myhipmi_important_notifications"
     }
 }

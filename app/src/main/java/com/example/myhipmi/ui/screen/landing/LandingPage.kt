@@ -24,7 +24,6 @@ import kotlinx.coroutines.delay
 fun LandingPage(
     onNavigateToLogin: () -> Unit
 ) {
-    // Animasi untuk logo
     var startAnimation by remember { mutableStateOf(false) }
 
     val scale by animateFloatAsState(
@@ -42,7 +41,6 @@ fun LandingPage(
         label = "alpha"
     )
 
-    // Animasi pulsing untuk text
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.4f,
@@ -53,7 +51,6 @@ fun LandingPage(
         ),
         label = "pulseAlpha"
     )
-
     LaunchedEffect(Unit) {
         startAnimation = true
         delay(3000)
@@ -82,7 +79,6 @@ fun LandingPage(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.padding(48.dp)
         ) {
-            // Logo dengan animasi
             Image(
                 painter = painterResource(id = R.drawable.myhipmi_logo),
                 contentDescription = "MyHIPMI Logo",

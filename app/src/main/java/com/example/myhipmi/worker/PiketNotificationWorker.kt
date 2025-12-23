@@ -28,29 +28,23 @@ class PiketNotificationWorker(
                 return@withContext Result.success()
             }
 
-            // Check apakah hari ini adalah hari piket pengurus
             val isPiketDay = checkPiketDay(idPengurus)
             
             if (isPiketDay) {
                 Log.d(TAG, "Today is piket day for user $idPengurus, showing notification")
-                
-                // Tampilkan notifikasi sistem
                 PiketNotificationHelper.showPiketNotification(applicationContext)
-                
-                // Simpan notifikasi ke database
                 try {
                     val apiService = ApiConfig.getApiService()
                     val request = CreatePiketNotificationRequest(idPengurus = idPengurus)
                     val response = apiService.createPiketNotification(request)
                     
                     if (response.isSuccessful && response.body()?.success == true) {
-                        Log.d(TAG, "✅ Piket notification saved to database")
+                        Log.d(TAG, "Piket notification saved to database")
                     } else {
-                        Log.w(TAG, "⚠️ Failed to save piket notification to database: ${response.message()}")
+                        Log.w(TAG, "⚠Failed to save piket notification to database: ${response.message()}")
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error saving piket notification to database: ${e.message}", e)
-                    // Tidak return error karena notifikasi sistem sudah berhasil ditampilkan
                 }
                 
                 Result.success()

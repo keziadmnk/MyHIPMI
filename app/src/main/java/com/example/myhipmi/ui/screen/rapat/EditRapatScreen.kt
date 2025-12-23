@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myhipmi.ui.components.MyHipmiTopBar
-import com.example.myhipmi.ui.components.MenuDrawer
+
 import com.example.myhipmi.ui.theme.GreenMain
 import com.example.myhipmi.ui.theme.GreenPrimary
 import com.example.myhipmi.ui.theme.White
@@ -46,14 +46,8 @@ fun EditRapatScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val successMessage by viewModel.successMessage.collectAsState()
-
-    // Ambil context dan session manager
     val context = LocalContext.current
     val sessionManager = remember { UserSessionManager(context) }
-
-    var isMenuVisible by remember { mutableStateOf(false) }
-    
-    // State input form
     var namaRapat by remember { mutableStateOf("") }
     var tanggal by remember { mutableStateOf("") }
     var dateSelectedMillis by remember { mutableStateOf(0L) }
@@ -61,11 +55,7 @@ fun EditRapatScreen(
     var endTime by remember { mutableStateOf("") }
     var lokasi by remember { mutableStateOf("") }
     var deskripsi by remember { mutableStateOf("") }
-    
-    // State untuk data agenda yang sedang diedit
     var isDataLoaded by remember { mutableStateOf(false) }
-
-    // Date and Time Picker states
     var showDatePicker by remember { mutableStateOf(false) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
@@ -74,11 +64,9 @@ fun EditRapatScreen(
     val startTimePickerState = rememberTimePickerState()
     val endTimePickerState = rememberTimePickerState()
 
-    // Snackbar state
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Animation state
     var isVisible by remember { mutableStateOf(false) }
     LaunchedEffect(isDataLoaded) {
         if (isDataLoaded) {
@@ -87,7 +75,6 @@ fun EditRapatScreen(
         }
     }
 
-    // Load data agenda yang akan diedit
     LaunchedEffect(idAgenda) {
         scope.launch {
             try {
@@ -101,8 +88,7 @@ fun EditRapatScreen(
                         endTime = it.endTimeDisplay
                         lokasi = it.location ?: ""
                         deskripsi = it.description ?: ""
-                        
-                        // Parse tanggal untuk dateSelectedMillis
+
                         try {
                             val dateFormat = SimpleDateFormat("dd MMMM yyyy", Locale.forLanguageTag("id-ID"))
                             val date = dateFormat.parse(it.dateDisplay)
@@ -124,12 +110,10 @@ fun EditRapatScreen(
         }
     }
 
-    // Handle success/error messages
     LaunchedEffect(successMessage, errorMessage) {
         successMessage?.let {
             snackbarHostState.showSnackbar(it)
             viewModel.clearMessages()
-            // Navigate back to rapat and force refresh setelah sukses
             navController.navigate("rapat") {
                 popUpTo("rapat") { inclusive = true }
             }
@@ -145,15 +129,13 @@ fun EditRapatScreen(
             topBar = {
                 MyHipmiTopBar(
                     title = "Edit Rapat",
-                    onBackClick = { navController.popBackStack() },
-                    onMenuClick = { isMenuVisible = true }
+                    onBackClick = { navController.popBackStack() }
                 )
             },
             snackbarHost = { SnackbarHost(snackbarHostState) }
         ) { innerPadding ->
             
             if (!isDataLoaded) {
-                // Loading state
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -163,7 +145,6 @@ fun EditRapatScreen(
                     CircularProgressIndicator(color = GreenPrimary)
                 }
             } else {
-                // Form sudah terisi
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -172,7 +153,6 @@ fun EditRapatScreen(
                         .padding(horizontal = 20.dp),
                     contentPadding = PaddingValues(vertical = 16.dp)
                 ) {
-                    // Header
                     item {
                         AnimatedVisibility(
                             visible = isVisible,
@@ -195,8 +175,6 @@ fun EditRapatScreen(
                             }
                         }
                     }
-
-                    // Error Message
                     item {
                         AnimatedVisibility(
                             visible = !errorMessage.isNullOrBlank(),
@@ -230,8 +208,6 @@ fun EditRapatScreen(
                             }
                         }
                     }
-
-                    // Success Message
                     item {
                         AnimatedVisibility(
                             visible = !successMessage.isNullOrBlank(),
@@ -265,8 +241,6 @@ fun EditRapatScreen(
                             }
                         }
                     }
-
-                    // Input Fields with animation
                     item {
                         AnimatedVisibility(
                             visible = isVisible,
@@ -327,7 +301,6 @@ fun EditRapatScreen(
                         }
                     }
 
-                    // Tombol "Batal" dan "Simpan"
                     item {
                         AnimatedVisibility(
                             visible = isVisible,
@@ -362,7 +335,6 @@ fun EditRapatScreen(
 
                                 Button(
                                     onClick = {
-                                        // Validasi input
                                         if (namaRapat.isBlank()) {
                                             scope.launch {
                                                 snackbarHostState.showSnackbar("Nama rapat harus diisi")
@@ -393,8 +365,6 @@ fun EditRapatScreen(
                                             }
                                             return@Button
                                         }
-
-                                        // Update data rapat
                                         viewModel.updateAgenda(
                                             idAgenda = idAgenda,
                                             title = namaRapat,
@@ -442,8 +412,7 @@ fun EditRapatScreen(
                 }
             }
         }
-        
-        // DatePicker Dialog
+
         if (showDatePicker) {
             DatePickerDialog(
                 onDismissRequest = { showDatePicker = false },
@@ -477,8 +446,6 @@ fun EditRapatScreen(
                 )
             }
         }
-
-        // Start Time Picker Dialog
         if (showStartTimePicker) {
             TimePickerDialog(
                 onDismissRequest = { showStartTimePicker = false },
@@ -511,8 +478,6 @@ fun EditRapatScreen(
                 )
             }
         }
-
-        // End Time Picker Dialog
         if (showEndTimePicker) {
             TimePickerDialog(
                 onDismissRequest = { showEndTimePicker = false },
@@ -546,27 +511,5 @@ fun EditRapatScreen(
             }
         }
 
-        // Menu Drawer
-        MenuDrawer(
-            isVisible = isMenuVisible,
-            onDismiss = { isMenuVisible = false },
-            userName = sessionManager.getNamaPengurus() ?: "Pengurus",
-            userRole = "Sekretaris Umum",
-            onProfileClick = {
-                isMenuVisible = false
-                navController.navigate("profile")
-            },
-            onAboutClick = {
-                isMenuVisible = false
-                navController.navigate("about")
-            },
-            onLogoutClick = {
-                isMenuVisible = false
-                sessionManager.clearSession()
-                navController.navigate("login") {
-                    popUpTo("home") { inclusive = true }
-                }
-            }
-        )
     }
 }

@@ -38,7 +38,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 import com.example.myhipmi.ui.components.MyHipmiTopBar
-import com.example.myhipmi.ui.components.MenuDrawer
+
 import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
 import com.example.myhipmi.ui.theme.*
 import kotlinx.coroutines.delay
@@ -47,7 +47,7 @@ import com.example.myhipmi.utils.EventStatus
 
 @Composable
 fun EventScreen(navController: NavHostController) {
-    var isMenuVisible by remember { mutableStateOf(false) }
+
     var eventList by remember { mutableStateOf<List<EventItemResponse>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -56,8 +56,6 @@ fun EventScreen(navController: NavHostController) {
 
     val apiService = remember { ApiConfig.getApiService() }
     val coroutineScope = rememberCoroutineScope()
-
-    // Function untuk load events
     fun loadEvents() {
         coroutineScope.launch {
             isLoading = true
@@ -86,10 +84,7 @@ fun EventScreen(navController: NavHostController) {
             try {
                 val response = apiService.deleteEvent(event.idEvent)
                 if (response.isSuccessful) {
-                    // Muat ulang daftar setelah berhasil
                     loadEvents()
-                    // Optional: Tampilkan Toast sukses
-                    // Toast.makeText(context, response.body()?.message ?: "Event berhasil dihapus", Toast.LENGTH_SHORT).show()
                 } else {
                     errorMessage = "Gagal menghapus event (${response.code()})"
                 }
@@ -101,8 +96,6 @@ fun EventScreen(navController: NavHostController) {
             }
         }
     }
-
-    // Load events saat pertama kali screen muncul
     LaunchedEffect(Unit) {
         loadEvents()
     }
@@ -171,8 +164,7 @@ fun EventScreen(navController: NavHostController) {
                 delay(150)
                 cardsVisible = true
             }
-            
-            // Loading State
+
             if (isLoading) {
                 Box(
                     modifier = Modifier
@@ -193,7 +185,6 @@ fun EventScreen(navController: NavHostController) {
                     }
                 }
             }
-            // Error State
             else if (errorMessage != null) {
                 Box(
                     modifier = Modifier
@@ -226,7 +217,6 @@ fun EventScreen(navController: NavHostController) {
                     }
                 }
             }
-            // Empty State
             else if (eventList.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -259,7 +249,6 @@ fun EventScreen(navController: NavHostController) {
                     }
                 }
             }
-            // Event List
             else {
                 LazyColumn(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
@@ -320,25 +309,6 @@ fun EventScreen(navController: NavHostController) {
                 )
             }
         }
-        // Menu Drawer
-        MenuDrawer(
-            isVisible = isMenuVisible,
-            onDismiss = { isMenuVisible = false },
-            userName = "Nagita Slavina",
-            userRole = "Sekretaris Umum",
-            onProfileClick = {
-                isMenuVisible = false
-                navController.navigate("profile")
-            },
-            onAboutClick = {
-                isMenuVisible = false
-                navController.navigate("about")
-            },
-            onLogoutClick = {
-                isMenuVisible = false
-                // TODO: Handle logout
-            }
-        )
     }
 }
 
@@ -358,7 +328,6 @@ fun EventCard(
         event.tanggal
     }
 
-    // Format waktu dari HH:MM:SS ke HH:MM
     val formattedTime = try {
         event.waktu.substring(0, 5) + " WIB"
     } catch (e: Exception) {
@@ -395,7 +364,6 @@ fun EventCard(
             }
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
-            // Judul & Status Badge & Tombol Menu
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -413,8 +381,6 @@ fun EventCard(
                     )
                     
                     Spacer(modifier = Modifier.width(8.dp))
-                    
-                    // STATUS BADGE
                     val eventStatus = EventStatusHelper.getEventStatus(event.tanggal, event.waktu)
                     Surface(
                         shape = RoundedCornerShape(6.dp),
@@ -429,8 +395,6 @@ fun EventCard(
                         )
                     }
                 }
-
-                // Tombol titik tiga
                 Box {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
@@ -440,8 +404,6 @@ fun EventCard(
                             .size(24.dp)
                             .clickable { showMenu = !showMenu }
                     )
-
-                    // Popup Menu
                     DropdownMenu(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false },
@@ -452,7 +414,7 @@ fun EventCard(
                             text = { Text("Edit") },
                             onClick = {
                                 showMenu = false
-                                navController.navigate("edit_event/${event.idEvent}") // <--- Menuju layar edit
+                                navController.navigate("edit_event/${event.idEvent}")
                             },
                             leadingIcon = {
                                 Icon(Icons.Default.Edit, contentDescription = null, tint = BluePrimary)
@@ -473,8 +435,6 @@ fun EventCard(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-
-            // Gambar & Detail
             Row(modifier = Modifier.fillMaxWidth()) {
                 // Image with modern styling
                 Box(

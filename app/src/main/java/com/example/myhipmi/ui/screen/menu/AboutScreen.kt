@@ -26,51 +26,25 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.myhipmi.R
 import com.example.myhipmi.ui.components.MyHipmiTopBar
-import com.example.myhipmi.ui.components.MenuDrawer
+
 import com.example.myhipmi.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(navController: NavController) {
-    var isMenuVisible by remember { mutableStateOf(false) }
-    
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            topBar = {
-                MyHipmiTopBar(
-                    title = "Tentang Aplikasi",
-                    onBackClick = { navController.popBackStack() },
-                    onMenuClick = { isMenuVisible = true }
-                )
-            },
+    Scaffold(
+        topBar = {
+            MyHipmiTopBar(
+                title = "Tentang Aplikasi",
+                onBackClick = { navController.popBackStack() }
+            )
+        },
         bottomBar = {
-            // kalau kamu punya NavigationBar di bawah, panggil composable-nya di sini
         }
     ) { innerPadding ->
         AboutContent(Modifier.padding(innerPadding))
     }
-    }
-    
-        // Menu Drawer
-        MenuDrawer(
-            isVisible = isMenuVisible,
-            onDismiss = { isMenuVisible = false },
-            userName = "Nagita Slavina",
-            userRole = "Sekretaris Umum",
-            onProfileClick = {
-                isMenuVisible = false
-                navController.navigate("profile")
-            },
-            onAboutClick = {
-                isMenuVisible = false
-                navController.navigate("about")
-            },
-            onLogoutClick = {
-                isMenuVisible = false
-                // TODO: Handle logout
-            }
-        )
-    }
+}
 
 @Composable
 fun AboutContent(modifier: Modifier = Modifier) {
@@ -80,12 +54,10 @@ fun AboutContent(modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .background(Color(0xFFF8FAF9))
+            .background(White)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
-        // === Bagian Tentang Aplikasi ===
         Text(
             text = "Tentang Aplikasi",
             fontWeight = FontWeight.Bold,
@@ -127,8 +99,6 @@ fun AboutContent(modifier: Modifier = Modifier) {
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-
-        // === Bagian Tim Pengembang ===
         Text(
             text = "Tim Pengembang",
             fontWeight = FontWeight.Bold,
@@ -163,7 +133,6 @@ fun DeveloperCard(name: String, nim: String) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon avatar dengan background hijau
             Box(
                 modifier = Modifier
                     .size(56.dp)

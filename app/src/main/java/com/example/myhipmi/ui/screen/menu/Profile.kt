@@ -21,28 +21,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.myhipmi.ui.components.MenuDrawer
+
 import com.example.myhipmi.ui.components.MyHipmiTopBar
 import com.example.myhipmi.data.local.UserSessionManager
 import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(navController: NavController) {
-    var isMenuVisible by remember { mutableStateOf(false) }
-    
-    // Get user session
     val context = androidx.compose.ui.platform.LocalContext.current
     val sessionManager = remember { UserSessionManager(context) }
     val loggedInUserId = sessionManager.getIdPengurus()
-    
-    // State untuk data user
+
     var nama by remember { mutableStateOf("") }
     var jabatan by remember { mutableStateOf("") }
     var jadwalPiket by remember { mutableStateOf("") }
     var nomorHP by remember { mutableStateOf("") }
     var alamat by remember { mutableStateOf("") }
-    
-    // State untuk loading dan error
+
     var isLoading by remember { mutableStateOf(true) }
     var isUpdating by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -50,8 +45,7 @@ fun ProfileScreen(navController: NavController) {
     val apiService = remember { com.example.myhipmi.data.remote.retrofit.ApiConfig.getApiService() }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    // Load data pengurus saat pertama kali
+
     LaunchedEffect(loggedInUserId) {
         if (loggedInUserId != null) {
             isLoading = true
@@ -80,18 +74,15 @@ fun ProfileScreen(navController: NavController) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            topBar = {
+             topBar = {
                 MyHipmiTopBar(
                     title = "Profile",
-                    onBackClick = { navController.navigateUp() },
-                    onMenuClick = { isMenuVisible = true },
-                    onNotificationClick = { /* Handle notification */ }
+                    onBackClick = { navController.navigateUp() }
                 )
             },
             snackbarHost = { SnackbarHost(snackbarHostState) }
         ) { innerPadding ->
             if (isLoading) {
-                // Loading state
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -111,8 +102,6 @@ fun ProfileScreen(navController: NavController) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Spacer(modifier = Modifier.height(32.dp))
-
-                    // Profile Image with border
                     Box(
                         modifier = Modifier
                             .size(140.dp)
@@ -140,8 +129,6 @@ fun ProfileScreen(navController: NavController) {
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
-
-                    // Edit Title
                     Text(
                         text = "Edit Profile",
                         fontSize = 24.sp,
@@ -150,8 +137,6 @@ fun ProfileScreen(navController: NavController) {
                     )
 
                     Spacer(modifier = Modifier.height(32.dp))
-
-                    // Form Card
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
@@ -166,7 +151,6 @@ fun ProfileScreen(navController: NavController) {
                                 .fillMaxWidth()
                                 .padding(24.dp)
                         ) {
-                            // Nama (read-only)
                             ProfileTextField(
                                 label = "Nama",
                                 value = nama,
@@ -175,8 +159,6 @@ fun ProfileScreen(navController: NavController) {
                             )
 
                             Spacer(modifier = Modifier.height(16.dp))
-
-                            // Jabatan (read-only)
                             ProfileTextField(
                                 label = "Jabatan",
                                 value = jabatan,
@@ -185,8 +167,6 @@ fun ProfileScreen(navController: NavController) {
                             )
 
                             Spacer(modifier = Modifier.height(16.dp))
-
-                            // Jadwal Piket (read-only)
                             ProfileTextField(
                                 label = "Jadwal Piket",
                                 value = jadwalPiket,
@@ -195,8 +175,6 @@ fun ProfileScreen(navController: NavController) {
                             )
 
                             Spacer(modifier = Modifier.height(16.dp))
-
-                            // Nomor HP (editable)
                             ProfileTextField(
                                 label = "Nomor HP",
                                 value = nomorHP,
@@ -206,8 +184,6 @@ fun ProfileScreen(navController: NavController) {
                             )
 
                             Spacer(modifier = Modifier.height(16.dp))
-
-                            // Alamat (editable)
                             ProfileTextField(
                                 label = "Alamat",
                                 value = alamat,
@@ -221,8 +197,6 @@ fun ProfileScreen(navController: NavController) {
                     }
 
                     Spacer(modifier = Modifier.height(32.dp))
-
-                    // Update Button
                     Button(
                         onClick = {
                             if (loggedInUserId != null) {
@@ -277,28 +251,6 @@ fun ProfileScreen(navController: NavController) {
             }
         }
 
-        // Menu Drawer
-        MenuDrawer(
-            isVisible = isMenuVisible,
-            onDismiss = { isMenuVisible = false },
-            userName = nama.ifEmpty { "Pengurus" },
-            userRole = jabatan.ifEmpty { "Sekretaris Umum" },
-            onProfileClick = {
-                isMenuVisible = false
-                navController.navigate("profile")
-            },
-            onAboutClick = {
-                isMenuVisible = false
-                navController.navigate("about")
-            },
-            onLogoutClick = {
-                isMenuVisible = false
-                sessionManager.clearSession()
-                navController.navigate("login") {
-                    popUpTo("home") { inclusive = true }
-                }
-            }
-        )
     }
 }
 

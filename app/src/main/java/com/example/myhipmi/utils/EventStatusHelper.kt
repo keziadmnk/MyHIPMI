@@ -11,13 +11,6 @@ enum class EventStatus {
 }
 
 object EventStatusHelper {
-    
-    /**
-     * Menentukan status event berdasarkan tanggal dan waktu
-     * @param eventDate format: "yyyy-MM-dd"
-     * @param eventTime format: "HH:mm"
-     * @return EventStatus
-     */
     fun getEventStatus(eventDate: String, eventTime: String): EventStatus {
         try {
             val dateTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
@@ -29,31 +22,20 @@ object EventStatusHelper {
                 time = eventDateTime
             }
             val currentCalendar = Calendar.getInstance()
-            
-            // Ambil tanggal saja (tanpa waktu)
             val eventDay = eventCalendar.get(Calendar.DAY_OF_YEAR)
             val eventYear = eventCalendar.get(Calendar.YEAR)
             val currentDay = currentCalendar.get(Calendar.DAY_OF_YEAR)
             val currentYear = currentCalendar.get(Calendar.YEAR)
             
             return when {
-                // Event hari ini → ONGOING (regardless of time)
                 eventYear == currentYear && eventDay == currentDay -> EventStatus.ONGOING
-                
-                // Event sudah lewat (hari sebelumnya) → PAST
                 eventDateTime.before(currentCalendar.time) -> EventStatus.PAST
-                
-                // Event di masa depan → UPCOMING
                 else -> EventStatus.UPCOMING
             }
         } catch (e: Exception) {
             return EventStatus.PAST
         }
     }
-    
-    /**
-     * Mendapatkan teks status untuk ditampilkan
-     */
     fun getStatusText(status: EventStatus): String {
         return when (status) {
             EventStatus.UPCOMING -> "Upcoming"
@@ -61,10 +43,6 @@ object EventStatusHelper {
             EventStatus.PAST -> "Past"
         }
     }
-    
-    /**
-     * Mendapatkan warna untuk status badge
-     */
     fun getStatusColor(status: EventStatus): Long {
         return when (status) {
             EventStatus.UPCOMING -> 0xFF3B82F6  // Biru

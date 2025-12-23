@@ -40,7 +40,6 @@ data class KasItem(
     @SerializedName("bukti_transfer_url")
     val buktiTransferUrl: String?,
 
-    // Update: Support "tanggal" (dari list) dan "created_at" (dari create response)
     @SerializedName(value = "tanggal", alternate = ["created_at"])
     val tanggal: String,
 

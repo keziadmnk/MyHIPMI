@@ -31,7 +31,7 @@ import androidx.navigation.NavHostController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.myhipmi.ui.components.MyHipmiTopBar
-import com.example.myhipmi.ui.components.MenuDrawer
+
 import com.example.myhipmi.ui.theme.*
 import com.example.myhipmi.ui.viewmodel.RapatViewModel
 import com.example.myhipmi.data.local.UserSessionManager
@@ -43,8 +43,6 @@ import androidx.core.content.FileProvider
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
-
-
 @Composable
 fun ModernInfoRow(icon: ImageVector, label: String, value: String) {
     Row(
@@ -142,7 +140,7 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
     val isDone = backStackEntry.arguments?.getString("isDone")?.toBoolean() ?: false
 
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var isMenuVisible by remember { mutableStateOf(false) }
+
     var photoFile by remember { mutableStateOf<File?>(null) }
     var absenTimestamp by remember { mutableStateOf<String?>(null) }
     var absenPhotoUrl by remember { mutableStateOf<String?>(null) }
@@ -221,37 +219,37 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
 
                             sessionManager.saveAbsenTimestamp(idAgenda, timestamp)
 
-                            android.util.Log.d("RapatDetailScreen", "✅✅✅ SUCCESS! ✅✅✅")
+                            android.util.Log.d("RapatDetailScreen", "SUCCESS!")
                             android.util.Log.d("RapatDetailScreen", "Found absen for idPengurus: $loggedInUserId")
                             android.util.Log.d("RapatDetailScreen", "Timestamp: '$timestamp'")
                             android.util.Log.d("RapatDetailScreen", "Photo URL: '$photoUrl'")
                             android.util.Log.d("RapatDetailScreen", "Saved to SharedPreferences")
                         } else {
-                            android.util.Log.e("RapatDetailScreen", "❌❌❌ NOT FOUND! ❌❌❌")
+                            android.util.Log.e("RapatDetailScreen", "NOT FOUND!")
                             android.util.Log.e("RapatDetailScreen", "No absen for idPengurus: $loggedInUserId")
                             android.util.Log.e("RapatDetailScreen", "Total records checked: ${absenList.size}")
                         }
                     } else {
-                        android.util.Log.e("RapatDetailScreen", "❌ Response success=false")
+                        android.util.Log.e("RapatDetailScreen", "Response success=false")
                     }
                 } else {
                     val errorBody = response.errorBody()?.string()
-                    android.util.Log.e("RapatDetailScreen", "❌ API Error:")
+                    android.util.Log.e("RapatDetailScreen", "API Error:")
                     android.util.Log.e("RapatDetailScreen", "  - Code: ${response.code()}")
                     android.util.Log.e("RapatDetailScreen", "  - Error Body: $errorBody")
                 }
             } catch (e: Exception) {
-                android.util.Log.e("RapatDetailScreen", "❌ Exception occurred:", e)
-                android.util.Log.e("RapatDetailScreen", "  - Message: ${e.message}")
-                android.util.Log.e("RapatDetailScreen", "  - Stack trace:")
+                android.util.Log.e("RapatDetailScreen", "Exception occurred:", e)
+                android.util.Log.e("RapatDetailScreen", "Message: ${e.message}")
+                android.util.Log.e("RapatDetailScreen", "Stack trace:")
                 e.printStackTrace()
             } finally {
                 isLoadingAbsen = false
-                android.util.Log.d("RapatDetailScreen", "🏁 Finished loading (isLoadingAbsen = false)")
+                android.util.Log.d("RapatDetailScreen", "Finished loading (isLoadingAbsen = false)")
                 android.util.Log.d("RapatDetailScreen", "   Current absenTimestamp value: '$absenTimestamp'")
             }
         } else {
-            android.util.Log.e("RapatDetailScreen", "❌ Cannot fetch absen:")
+            android.util.Log.e("RapatDetailScreen", "Cannot fetch absen:")
             android.util.Log.e("RapatDetailScreen", "   - loggedInUserId: $loggedInUserId (is ${if (loggedInUserId == null) "NULL" else "OK"})")
             android.util.Log.e("RapatDetailScreen", "   - idAgenda: $idAgenda (is ${if (idAgenda <= 0) "INVALID" else "OK"})")
         }
@@ -294,8 +292,6 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
             }
         }
     }
-
-    // Status: 0 = Belum dimulai, 1 = Sedang berlangsung, 2 = Sudah terlewat
     fun checkAbsenTimeStatus(): Int {
         try {
             val currentTime = Calendar.getInstance()
@@ -331,7 +327,7 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
                     (currentDay == agendaDay)
 
             if (!isSameDate) {
-                return 2 // Beda tanggal = sudah terlewat
+                return 2
             }
 
             val startParts = startTime.replace(" WIB", "").split(":")
@@ -347,13 +343,13 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
             val endTotalMinutes = endHour * 60 + endMinute
 
             return when {
-                currentTotalMinutes < startTotalMinutes -> 0 // Belum dimulai
-                currentTotalMinutes > endTotalMinutes -> 2 // Sudah terlewat
-                else -> 1 // Sedang berlangsung
+                currentTotalMinutes < startTotalMinutes -> 0
+                currentTotalMinutes > endTotalMinutes -> 2
+                else -> 1
             }
         } catch (e: Exception) {
             android.util.Log.e("RapatDetailScreen", "Error checking absen time status: ${e.message}", e)
-            return 2 // Default: sudah terlewat
+            return 2
         }
     }
     
@@ -517,7 +513,7 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
                         }
                     }
 
-                    android.util.Log.d("RapatDetailScreen", "🎨 Rendering absen UI:")
+                    android.util.Log.d("RapatDetailScreen", "Rendering absen UI:")
                     android.util.Log.d("RapatDetailScreen", "   - isLoadingAbsen: $isLoadingAbsen")
                     android.util.Log.d("RapatDetailScreen", "   - absenTimestamp: '$absenTimestamp'")
                     android.util.Log.d("RapatDetailScreen", "   - isDone: $isDone")
@@ -651,7 +647,7 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
                         currentTime.get(Calendar.MINUTE))
 
                     when (absenTimeStatus) {
-                        0 -> { // Belum dimulai
+                        0 -> {
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -753,7 +749,7 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
                                 }
                             }
                         }
-                        2 -> { // Sudah terlewat
+                        2 -> {
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -811,7 +807,6 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
                                     }
 
                                     Spacer(modifier = Modifier.height(20.dp))
-
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -855,7 +850,7 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
                                 }
                             }
                         }
-                        else -> { // Status 1: Sedang berlangsung
+                        else -> {
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -992,7 +987,6 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
                                     }
 
                                     Spacer(modifier = Modifier.height(20.dp))
-
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -1101,27 +1095,6 @@ fun RapatDetailScreen(navController: NavHostController, backStackEntry: NavBackS
             }
         }
 
-        MenuDrawer(
-            isVisible = isMenuVisible,
-            onDismiss = { isMenuVisible = false },
-            userName = loggedInUserName ?: "Pengurus",
-            userRole = "Sekretaris Umum",
-            onProfileClick = {
-                isMenuVisible = false
-                navController.navigate("profile")
-            },
-            onAboutClick = {
-                isMenuVisible = false
-                navController.navigate("about")
-            },
-            onLogoutClick = {
-                isMenuVisible = false
-                sessionManager.clearSession()
-                navController.navigate("login") {
-                    popUpTo("home") { inclusive = true }
-                }
-            }
-        )
     }
 }
 }

@@ -77,26 +77,21 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     
     val totalKasState by viewModel.totalKasState.collectAsState()
-    
-    // State untuk hari piket pengurus
     val context = LocalContext.current
     val sessionManager = remember { UserSessionManager(context) }
     val loggedInUserId = sessionManager.getIdPengurus()
     var hariPiket by remember { mutableStateOf<String?>(null) }
     var isLoadingHariPiket by remember { mutableStateOf(true) }
-    
-    // Detect when returning to home screen
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    
-    // Trigger refresh when coming back to home
+
     LaunchedEffect(currentRoute) {
         if (currentRoute == "home") {
             refreshTrigger++
         }
     }
-    
-    // Fetch hari piket pengurus
+
     LaunchedEffect(loggedInUserId, refreshTrigger) {
         if (loggedInUserId != null) {
             isLoadingHariPiket = true
@@ -121,37 +116,30 @@ fun HomeScreen(
             isLoadingHariPiket = false
         }
     }
-    
-    // Fetch active event count, active rapat count, recent notifications, and total kas
+
     LaunchedEffect(refreshTrigger) {
         android.util.Log.d("HomeScreen", "📱 Fetching data... trigger=$refreshTrigger")
-        
-        // Fetch total kas via ViewModel
+
         viewModel.fetchTotalKas()
         
         scope.launch {
             try {
-                // Fetch events
                 val eventsResponse = ApiConfig.getApiService().getEvents()
                 if (eventsResponse.isSuccessful) {
                     val events = eventsResponse.body()?.events ?: emptyList()
                     android.util.Log.d("HomeScreen", "✅ Events fetched: ${events.size} events")
-                    // Hitung event yang Ongoing atau Upcoming
                     activeEventCount = events.count { event ->
                         val status = EventStatusHelper.getEventStatus(event.tanggal, event.waktu)
                         status == EventStatus.ONGOING || status == EventStatus.UPCOMING
                     }
                     android.util.Log.d("HomeScreen", "🔢 Active events: $activeEventCount")
                 }
-                
-                // Fetch rapat/agenda yang aktif
+
                 val rapatResponse = ApiConfig.getApiService().getAllAgenda()
                 if (rapatResponse.isSuccessful && rapatResponse.body()?.success == true) {
                     val allAgenda = rapatResponse.body()?.data ?: emptyList()
                     android.util.Log.d("HomeScreen", "✅ Agenda fetched: ${allAgenda.size} agenda")
-                    
-                    // Filter rapat yang masih berlangsung (belum selesai/expired)
-                    // HANYA hitung yang: 1) waktu belum lewat DAN 2) isDone = false
+
                     activeRapatCount = allAgenda.count { agenda ->
                         // Skip jika sudah selesai (isDone = true)
                         if (agenda.isDone) {
@@ -161,16 +149,12 @@ fun HomeScreen(
                         
                         try {
                             val currentTime = java.util.Calendar.getInstance()
-                            
-                            // Parse endTimeDisplay (format: "HH:mm WIB")
                             val endParts = agenda.endTimeDisplay.replace(" WIB", "").split(":")
                             val endHour = endParts[0].toInt()
                             val endMinute = endParts[1].toInt()
-
-                            // Parse date (format: "YYYY-MM-DD")
                             val dateParts = agenda.date.split("-")
                             val year = dateParts[0].toInt()
-                            val month = dateParts[1].toInt() - 1 // Calendar month is 0-based
+                            val month = dateParts[1].toInt() - 1
                             val day = dateParts[2].toInt()
 
                             val agendaEndTime = java.util.Calendar.getInstance().apply {
@@ -182,8 +166,6 @@ fun HomeScreen(
                                 set(java.util.Calendar.SECOND, 0)
                                 set(java.util.Calendar.MILLISECOND, 0)
                             }
-
-                            // Rapat aktif jika waktu belum lewat
                             val isActive = currentTime.before(agendaEndTime) || currentTime == agendaEndTime
                             
                             if (isActive) {
@@ -201,8 +183,7 @@ fun HomeScreen(
                     }
                     android.util.Log.d("HomeScreen", "🔢 Active rapat: $activeRapatCount (isDone=false & not expired)")
                 }
-                
-                // Fetch notifications (latest 3)
+
                 val notifResponse = ApiConfig.getApiService().getNotifications()
                 if (notifResponse.isSuccessful) {
                     val allNotifs = notifResponse.body()?.notifications ?: emptyList()
@@ -234,7 +215,7 @@ fun HomeScreen(
     Scaffold(
         bottomBar = {
             BottomNavBarContainer(
-                navController = navController, // <-- Teruskan NavController
+                navController = navController,
                 onHome = { navController.navigate("home") },
                 onKas = { navController.navigate("kas") },
                 onRapat = { navController.navigate("rapat") },
@@ -251,7 +232,6 @@ fun HomeScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-            // Header
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -314,8 +294,6 @@ fun HomeScreen(
             }
 
             Spacer(Modifier.height(24.dp))
-
-            // Summary cards
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -373,8 +351,6 @@ fun HomeScreen(
             )
 
             Spacer(Modifier.height(16.dp))
-
-            // Menu Items
             MenuItemCard(
                 title = "Bayar Kas",
                 description = "Lihat histori dan bayar iuran kas",
@@ -422,7 +398,6 @@ fun HomeScreen(
         isVisible = isMenuVisible,
         onDismiss = { isMenuVisible = false },
         userName = sessionManager.getNamaPengurus() ?: "Pengguna",
-        userRole = sessionManager.getJabatan() ?: "Jabatan belum diatur",
         onProfileClick = {
             navController.navigate("profile")
             isMenuVisible = false
@@ -431,7 +406,13 @@ fun HomeScreen(
             navController.navigate("about")
             isMenuVisible = false
         },
-        onLogoutClick = onLogout
+        onLogoutClick = {
+            isMenuVisible = false
+            sessionManager.clearSession()
+            navController.navigate("login") {
+                popUpTo(0) { inclusive = true }
+            }
+        }
     )
 }
 
@@ -490,8 +471,6 @@ fun SummaryCard(
         )
     }
 }
-
-// Helper function untuk format waktu notifikasi
 fun formatNotificationTime(dateString: String): String {
     return try {
         val parts = dateString.split("T")
@@ -500,8 +479,6 @@ fun formatNotificationTime(dateString: String): String {
             val timeComponents = timePart.split(":")
             val hour = timeComponents[0].toInt()
             val minute = timeComponents[1].toInt()
-            
-            // Hitung selisih waktu
             val notifTime = Calendar.getInstance().apply {
                 set(Calendar.HOUR_OF_DAY, hour)
                 set(Calendar.MINUTE, minute)
@@ -544,7 +521,6 @@ fun ActivityItem(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Icon with circular background
         Box(
             modifier = Modifier
                 .size(48.dp)
@@ -559,8 +535,6 @@ fun ActivityItem(
                 modifier = Modifier.size(24.dp)
             )
         }
-
-        // Text content
         Row(
             modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -607,7 +581,6 @@ fun MenuItemCard(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Icon with circular background
         Box(
             modifier = Modifier
                 .size(56.dp)
@@ -622,8 +595,6 @@ fun MenuItemCard(
                 modifier = Modifier.size(28.dp)
             )
         }
-
-        // Text content
         Column(
             modifier = Modifier.weight(1f)
         ) {
@@ -641,8 +612,6 @@ fun MenuItemCard(
                 lineHeight = 18.sp
             )
         }
-
-        // Arrow icon
         Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
@@ -652,9 +621,6 @@ fun MenuItemCard(
     }
 }
 
-/**
- * Wrapper supaya BottomNavBar punya background hijau lembut bulat atas
- */
 @Composable
 fun BottomNavBarContainer(
     navController: NavHostController,
@@ -665,10 +631,7 @@ fun BottomNavBarContainer(
     onEvent: () -> Unit
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    // Dapatkan rute saat ini. substringBefore('/') digunakan untuk menangani rute dengan argumen (contoh: rapat_detail).
     val currentRoute = navBackStackEntry?.destination?.route?.substringBefore('/')
-
-    // Cari index yang sesuai dengan rute saat ini. Default ke 0 (Home) jika tidak ditemukan.
     val selectedIndex = bottomBarItems.find { it.route == currentRoute }?.index ?: 0 //
     Surface(
         color = Color(0xFFDDECCF),

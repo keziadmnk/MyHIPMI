@@ -41,7 +41,6 @@ data class EventItemResponse(
     @SerializedName("poster_url")
     val posterUrl: String? = null,
 
-    // Data Relasi
     @SerializedName("Creator")
     val creator: EventCreator? = null,
 

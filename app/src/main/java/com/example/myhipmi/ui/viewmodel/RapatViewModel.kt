@@ -10,20 +10,18 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 import org.json.JSONObject
+import android.content.Context
+import com.example.myhipmi.utils.RapatNotificationHelper
 
 class RapatViewModel : ViewModel() {
 
     private val _apiService = ApiConfig.getApiService()
-    val apiService = _apiService // Expose apiService untuk diakses dari screen
-
-    // State untuk list agenda rapat
+    val apiService = _apiService
     private val _rapatBerlangsung = MutableStateFlow<List<AgendaRapatData>>(emptyList())
     val rapatBerlangsung: StateFlow<List<AgendaRapatData>> = _rapatBerlangsung
 
     private val _rapatSelesai = MutableStateFlow<List<AgendaRapatData>>(emptyList())
     val rapatSelesai: StateFlow<List<AgendaRapatData>> = _rapatSelesai
-
-    // State untuk loading dan error
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
@@ -36,8 +34,6 @@ class RapatViewModel : ViewModel() {
     init {
         loadAllAgenda()
     }
-
-    // Load semua agenda dari backend
     fun loadAllAgenda() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -47,34 +43,23 @@ class RapatViewModel : ViewModel() {
                 val response = apiService.getAllAgenda()
                 if (response.isSuccessful && response.body()?.success == true) {
                     val allData = response.body()?.data ?: emptyList()
-
-                    // Pisahkan berdasarkan isDone dan waktu yang sudah lewat
                     val currentTime = Calendar.getInstance()
 
                     val (selesaiList, berlangsung) = allData.partition { agenda ->
-                        // Agenda masuk ke "Selesai" jika:
-                        // 1. isDone = true (sudah absen), ATAU
-                        // 2. Waktu rapat sudah lewat (sudah melewati endAt)
-
-                        // Cek 1: isDone = true (backend sudah set ini kalau ada absensi)
                         if (agenda.isDone) {
                             android.util.Log.d("RapatViewModel", "Agenda ${agenda.idAgenda} isDone = true")
                             return@partition true
                         }
-
-                        // Cek 2: Waktu rapat sudah lewat
                         try {
                             val endParts = agenda.endTimeDisplay.replace(" WIB", "").split(":")
                             val endHour = endParts[0].toInt()
                             val endMinute = endParts[1].toInt()
 
-                            // Parse tanggal agenda
                             val agendaDateParts = agenda.dateDisplay.split(" ")
                             val day = agendaDateParts[0].toInt()
                             val monthName = agendaDateParts[1]
                             val year = agendaDateParts[2].toInt()
 
-                            // Konversi nama bulan Indonesia ke angka
                             val monthNumber = when (monthName.lowercase()) {
                                 "januari" -> Calendar.JANUARY
                                 "februari" -> Calendar.FEBRUARY
@@ -101,7 +86,6 @@ class RapatViewModel : ViewModel() {
                                 set(Calendar.MILLISECOND, 0)
                             }
 
-                            // Rapat sudah selesai jika waktu sekarang > waktu selesai rapat
                             val isTimeExpired = currentTime.after(agendaEndTime)
                             if (isTimeExpired) {
                                 android.util.Log.d("RapatViewModel", "Agenda ${agenda.idAgenda} waktu sudah lewat")
@@ -117,8 +101,6 @@ class RapatViewModel : ViewModel() {
                     _rapatBerlangsung.value = berlangsung
 
                     android.util.Log.d("RapatViewModel", "Agenda berlangsung: ${berlangsung.size}, selesai: ${selesaiList.size}")
-
-                    // Debug: tampilkan isDone untuk setiap agenda
                     allData.forEach { agenda ->
                         android.util.Log.d("RapatViewModel", "Agenda ${agenda.idAgenda} - isDone: ${agenda.isDone}")
                     }
@@ -133,9 +115,8 @@ class RapatViewModel : ViewModel() {
             }
         }
     }
-
-    // Buat agenda rapat baru
     fun createAgenda(
+        context: Context,
         idPengurus: Int,
         title: String,
         creatorId: Int,
@@ -152,33 +133,24 @@ class RapatViewModel : ViewModel() {
             _errorMessage.value = null
 
             try {
-                // Format tanggal untuk backend (YYYY-MM-DD)
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 val date = dateFormat.format(Date(dateSelectedMillis))
-
-                // Parse waktu dari display format (HH:mm WIB)
                 val startParts = startTimeDisplay.replace(" WIB", "").trim().split(":")
                 val endParts = endTimeDisplay.replace(" WIB", "").trim().split(":")
-
-                // Buat Calendar untuk tanggal yang dipilih
                 val calendar = Calendar.getInstance()
                 calendar.timeInMillis = dateSelectedMillis
 
-                // Set jam mulai (WIB) - MySQL akan menyimpan sebagai local time
                 calendar.set(Calendar.HOUR_OF_DAY, startParts[0].toInt())
                 calendar.set(Calendar.MINUTE, startParts[1].toInt())
                 calendar.set(Calendar.SECOND, 0)
                 calendar.set(Calendar.MILLISECOND, 0)
 
-                // Format untuk MySQL DATETIME (tanpa timezone conversion)
                 val datetimeFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
                 datetimeFormat.timeZone = TimeZone.getTimeZone("UTC")
 
-                // Kurangi 7 jam untuk konversi WIB ke UTC
                 calendar.add(Calendar.HOUR_OF_DAY, -7)
                 val startAt = datetimeFormat.format(calendar.time)
 
-                // Reset calendar untuk end time
                 calendar.timeInMillis = dateSelectedMillis
                 calendar.set(Calendar.HOUR_OF_DAY, endParts[0].toInt())
                 calendar.set(Calendar.MINUTE, endParts[1].toInt())
@@ -202,19 +174,24 @@ class RapatViewModel : ViewModel() {
                     description = description
                 )
 
-                // Log untuk debugging
                 android.util.Log.d("RapatViewModel", "Request: $request")
 
                 val response = apiService.createAgenda(request)
-
-                // Log response
                 android.util.Log.d("RapatViewModel", "Response code: ${response.code()}")
                 android.util.Log.d("RapatViewModel", "Response body: ${response.body()}")
                 android.util.Log.d("RapatViewModel", "Response error: ${response.errorBody()?.string()}")
 
                 if (response.isSuccessful && response.body()?.success == true) {
                     _successMessage.value = response.body()?.message ?: "Agenda berhasil dibuat"
-                    loadAllAgenda() // Reload data
+
+                    RapatNotificationHelper.showRapatNotification(
+                        context = context,
+                        rapatTitle = title,
+                        rapatDate = dateDisplay,
+                        rapatLocation = location
+                    )
+                    
+                    loadAllAgenda()
                 } else {
                     val errorBody = response.errorBody()?.string()
                     _errorMessage.value = "Gagal membuat agenda rapat: ${errorBody ?: "Unknown error"}"
@@ -229,8 +206,6 @@ class RapatViewModel : ViewModel() {
             }
         }
     }
-
-    // Update agenda rapat
     fun updateAgenda(
         idAgenda: Int,
         title: String,
@@ -246,33 +221,26 @@ class RapatViewModel : ViewModel() {
             _errorMessage.value = null
 
             try {
-                // Format tanggal untuk backend (YYYY-MM-DD)
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 val date = dateFormat.format(Date(dateSelectedMillis))
 
-                // Parse waktu dari display format (HH:mm WIB)
                 val startParts = startTimeDisplay.replace(" WIB", "").trim().split(":")
                 val endParts = endTimeDisplay.replace(" WIB", "").trim().split(":")
 
-                // Buat Calendar untuk tanggal yang dipilih
                 val calendar = Calendar.getInstance()
                 calendar.timeInMillis = dateSelectedMillis
 
-                // Set jam mulai (WIB) - MySQL akan menyimpan sebagai local time
                 calendar.set(Calendar.HOUR_OF_DAY, startParts[0].toInt())
                 calendar.set(Calendar.MINUTE, startParts[1].toInt())
                 calendar.set(Calendar.SECOND, 0)
                 calendar.set(Calendar.MILLISECOND, 0)
 
-                // Format untuk MySQL DATETIME (tanpa timezone conversion)
                 val datetimeFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
                 datetimeFormat.timeZone = TimeZone.getTimeZone("UTC")
 
-                // Kurangi 7 jam untuk konversi WIB ke UTC
                 calendar.add(Calendar.HOUR_OF_DAY, -7)
                 val startAt = datetimeFormat.format(calendar.time)
 
-                // Reset calendar untuk end time
                 calendar.timeInMillis = dateSelectedMillis
                 calendar.set(Calendar.HOUR_OF_DAY, endParts[0].toInt())
                 calendar.set(Calendar.MINUTE, endParts[1].toInt())
@@ -281,7 +249,6 @@ class RapatViewModel : ViewModel() {
                 calendar.add(Calendar.HOUR_OF_DAY, -7)
                 val endAt = datetimeFormat.format(calendar.time)
 
-                // Ambil data agenda yang lama untuk creatorId dan creatorName
                 val existingAgenda = apiService.getAgendaById(idAgenda)
                 if (!existingAgenda.isSuccessful || existingAgenda.body()?.success != true) {
                     _errorMessage.value = "Gagal mengambil data agenda"
@@ -314,7 +281,7 @@ class RapatViewModel : ViewModel() {
 
                 if (response.isSuccessful && response.body()?.success == true) {
                     _successMessage.value = response.body()?.message ?: "Agenda berhasil diupdate"
-                    loadAllAgenda() // Reload data
+                    loadAllAgenda()
                 } else {
                     val errorBody = response.errorBody()?.string()
                     _errorMessage.value = "Gagal mengupdate agenda rapat: ${errorBody ?: "Unknown error"}"
@@ -330,11 +297,9 @@ class RapatViewModel : ViewModel() {
         }
     }
 
-    // Update agenda (mark as done)
     fun moveToSelesai(idAgenda: Int) {
         viewModelScope.launch {
             try {
-                // Cari agenda yang akan diupdate
                 val agenda = _rapatBerlangsung.value.find { it.idAgenda == idAgenda }
                 if (agenda != null) {
                     val request = CreateRapatRequest(
@@ -352,8 +317,6 @@ class RapatViewModel : ViewModel() {
                         description = agenda.description
                     )
 
-                    // Update isDone menjadi true (ini akan dilakukan di backend saat absen)
-                    // Untuk sementara kita langsung reload data
                     loadAllAgenda()
                 }
             } catch (e: Exception) {
@@ -361,8 +324,6 @@ class RapatViewModel : ViewModel() {
             }
         }
     }
-
-    // Hapus agenda
     fun deleteAgenda(idAgenda: Int) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -370,7 +331,7 @@ class RapatViewModel : ViewModel() {
                 val response = apiService.deleteAgenda(idAgenda)
                 if (response.isSuccessful && response.body()?.success == true) {
                     _successMessage.value = "Agenda berhasil dihapus"
-                    loadAllAgenda() // Reload data
+                    loadAllAgenda()
                 } else {
                     _errorMessage.value = "Gagal menghapus agenda"
                 }
@@ -381,8 +342,6 @@ class RapatViewModel : ViewModel() {
             }
         }
     }
-
-    // Buat absen rapat
     fun createAbsen(
         idAgenda: Int,
         idPengurus: Int,
@@ -408,12 +367,8 @@ class RapatViewModel : ViewModel() {
                     _successMessage.value = responseBody?.message ?: "Absen berhasil dicatat"
                     
                     android.util.Log.d("RapatViewModel", "Absen berhasil dengan timestamp: ${responseBody?.data?.timestamp}")
-                    
-                    // Single refresh - data akan di-refresh lagi oleh screen saat kembali
                     android.util.Log.d("RapatViewModel", "Refreshing data after successful absen...")
                     loadAllAgenda()
-
-                    // Panggil onSuccess dengan response data
                     onSuccess(responseBody)
                 } else {
                     val errorBody = response.errorBody()?.string()

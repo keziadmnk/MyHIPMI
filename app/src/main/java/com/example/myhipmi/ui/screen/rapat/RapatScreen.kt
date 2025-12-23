@@ -26,7 +26,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myhipmi.ui.components.MyHipmiTopBar
-import com.example.myhipmi.ui.components.MenuDrawer
+
 import com.example.myhipmi.ui.screen.home.BottomNavBarContainer
 import com.example.myhipmi.ui.theme.*
 import com.example.myhipmi.ui.viewmodel.RapatViewModel
@@ -41,32 +41,22 @@ fun RapatScreen(navController: NavHostController) {
     val viewModel: RapatViewModel = viewModel()
     val context = LocalContext.current
     val sessionManager = remember { UserSessionManager(context) }
-    // Ambil nama user (nullable) dan gunakan placeholder di UI jika null
     val loggedInUserName = sessionManager.getNamaPengurus()
 
-    // Collect state dari ViewModel
     val rapatBerlangsung by viewModel.rapatBerlangsung.collectAsState()
     val rapatSelesai by viewModel.rapatSelesai.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val successMessage by viewModel.successMessage.collectAsState()
-
-    // Simpan selectedTab dengan rememberSaveable agar bertahan saat back navigation
     var selectedTab by rememberSaveable { mutableStateOf(0) }
-    var isMenuVisible by remember { mutableStateOf(false) }
+
     var showDeleteDialog by remember { mutableStateOf(false) }
     var selectedRapat by remember { mutableStateOf<AgendaRapatData?>(null) }
     val tabs = listOf("Berlangsung", "Selesai")
-    
-    // Log untuk debug
     LaunchedEffect(selectedTab) {
         android.util.Log.d("RapatScreen", "Current selected tab: $selectedTab (${tabs[selectedTab]})")
     }
-
-    // Track apakah sudah pernah load data
     var hasLoadedData by remember { mutableStateOf(false) }
-    
-    // Auto-refresh saat screen pertama kali dibuka
     LaunchedEffect(Unit) {
         if (!hasLoadedData) {
             android.util.Log.d("RapatScreen", "Initial load - loading data...")
@@ -74,14 +64,8 @@ fun RapatScreen(navController: NavHostController) {
             hasLoadedData = true
         }
     }
-
-    // Snackbar state - deklarasi di atas agar bisa digunakan di LaunchedEffect
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    // Track jika sudah tampilkan pesan sukses
     var hasShownSuccessMessage by remember { mutableStateOf(false) }
-
-    // Refresh saat kembali dari screen lain DAN cek pesan sukses
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     LaunchedEffect(currentBackStackEntry) {
         val route = currentBackStackEntry?.destination?.route
@@ -89,10 +73,8 @@ fun RapatScreen(navController: NavHostController) {
         
         if (route == "rapat" && hasLoadedData) {
             android.util.Log.d("RapatScreen", "Back to screen - refreshing data...")
-            // Single refresh untuk efisiensi
             viewModel.loadAllAgenda()
-            
-            // Cek success message dari ViewModel
+
             if (!hasShownSuccessMessage && !successMessage.isNullOrBlank()) {
                 android.util.Log.d("RapatScreen", "Showing success message: $successMessage")
                 snackbarHostState.showSnackbar(successMessage!!)
@@ -101,8 +83,6 @@ fun RapatScreen(navController: NavHostController) {
             }
         }
     }
-
-    // Show snackbar untuk error atau success dari ViewModel
     LaunchedEffect(errorMessage, successMessage) {
         errorMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -124,7 +104,6 @@ fun RapatScreen(navController: NavHostController) {
             },
             snackbarHost = { SnackbarHost(snackbarHostState) },
             bottomBar = {
-                // Hilangkan bottom bar saat dialog hapus muncul
                 if (!showDeleteDialog) {
                     BottomNavBarContainer(
                         navController = navController,
@@ -137,7 +116,6 @@ fun RapatScreen(navController: NavHostController) {
                 }
             },
             floatingActionButton = {
-                // Hilangkan FAB saat dialog hapus muncul
                 if (selectedTab == 0 && !showDeleteDialog) {
                     FloatingActionButton(
                         onClick = { navController.navigate("add_rapat") },
@@ -155,7 +133,6 @@ fun RapatScreen(navController: NavHostController) {
                     .padding(innerPadding)
                     .background(Color(0xFFF8FAF9))
             ) {
-                // === Tab Bar ===
                 TabRow(
                     selectedTabIndex = selectedTab,
                     containerColor = Color.White,
@@ -185,8 +162,6 @@ fun RapatScreen(navController: NavHostController) {
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
-
-                // Loading indicator
                 if (isLoading) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -219,8 +194,6 @@ fun RapatScreen(navController: NavHostController) {
                 }
             }
         }
-
-        // Delete Confirmation Bottom Sheet - ditampilkan di atas semua komponen
         if (showDeleteDialog) {
             DeleteConfirmationBottomSheet(
                 rapatTitle = selectedRapat?.title ?: "",
@@ -232,28 +205,6 @@ fun RapatScreen(navController: NavHostController) {
             )
         }
 
-        // Menu Drawer
-        MenuDrawer(
-            isVisible = isMenuVisible,
-            onDismiss = { isMenuVisible = false },
-            userName = loggedInUserName ?: "Pengurus",
-            userRole = "Sekretaris Umum",
-            onProfileClick = {
-                isMenuVisible = false
-                navController.navigate("profile")
-            },
-            onAboutClick = {
-                isMenuVisible = false
-                navController.navigate("about")
-            },
-            onLogoutClick = {
-                isMenuVisible = false
-                sessionManager.clearSession()
-                navController.navigate("login") {
-                    popUpTo("home") { inclusive = true }
-                }
-            }
-        )
     }
 }
 
@@ -298,22 +249,17 @@ fun RapatCard(
     onDeleteClick: () -> Unit = {}
 ) {
     var showMenu by remember { mutableStateOf(false) }
-
-    // Cek apakah waktu rapat sudah lewat
     val isExpired = remember(rapat) {
         try {
             val currentTime = Calendar.getInstance()
             val endParts = rapat.endTimeDisplay.replace(" WIB", "").split(":")
             val endHour = endParts[0].toInt()
             val endMinute = endParts[1].toInt()
-
-            // Parse tanggal agenda
             val agendaDateParts = rapat.dateDisplay.split(" ")
             val day = agendaDateParts[0].toInt()
             val monthName = agendaDateParts[1]
             val year = agendaDateParts[2].toInt()
 
-            // Konversi nama bulan Indonesia ke angka
             val monthNumber = when (monthName.lowercase()) {
                 "januari" -> Calendar.JANUARY
                 "februari" -> Calendar.FEBRUARY
@@ -363,7 +309,6 @@ fun RapatCard(
             }
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
-            // === Header: Judul, Status Badge, dan menu ===
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -381,8 +326,6 @@ fun RapatCard(
                     )
                     
                     Spacer(modifier = Modifier.width(8.dp))
-                    
-                    // STATUS BADGE
                     val (statusText, statusColor) = when {
                         rapat.isDone -> Pair("Hadir", 0xFF10B981)
                         isExpired -> Pair("Tidak Hadir", 0xFFEF4444)
@@ -402,8 +345,6 @@ fun RapatCard(
                         )
                     }
                 }
-
-                // Tombol titik tiga
                 Box {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
@@ -455,8 +396,6 @@ fun RapatCard(
             )
 
             Spacer(modifier = Modifier.height(12.dp))
-
-            // Detail Info dengan styling modern
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 RapatDetailRow(Icons.Default.CalendarToday, rapat.dateDisplay, Color(0xFFEF4444))
                 RapatDetailRow(
@@ -470,7 +409,6 @@ fun RapatCard(
     }
 }
 
-// Helper class untuk multiple return values
 data class Tuple4<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
 @Composable
@@ -513,7 +451,6 @@ fun DeleteConfirmationBottomSheet(
     onDismiss: () -> Unit,
     onConfirmDelete: () -> Unit
 ) {
-    // Overlay abu-abu dengan efek blur
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -524,7 +461,6 @@ fun DeleteConfirmationBottomSheet(
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
             )
     ) {
-        // Bottom Sheet Card
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -544,7 +480,6 @@ fun DeleteConfirmationBottomSheet(
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Handle bar untuk visual bottom sheet
                 Box(
                     modifier = Modifier
                         .width(40.dp)
@@ -556,8 +491,6 @@ fun DeleteConfirmationBottomSheet(
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
-
-                // Icon peringatan
                 Box(
                     modifier = Modifier
                         .size(64.dp)
@@ -576,8 +509,6 @@ fun DeleteConfirmationBottomSheet(
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
-
-                // Judul
                 Text(
                     text = "Hapus Agenda Rapat?",
                     fontSize = 20.sp,
@@ -587,8 +518,6 @@ fun DeleteConfirmationBottomSheet(
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
-
-                // Pesan peringatan
                 Text(
                     text = "Item ini akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.",
                     fontSize = 14.sp,
@@ -598,8 +527,6 @@ fun DeleteConfirmationBottomSheet(
                 )
 
                 Spacer(modifier = Modifier.height(28.dp))
-
-                // Tombol Hapus
                 Button(
                     onClick = onConfirmDelete,
                     modifier = Modifier
@@ -628,8 +555,6 @@ fun DeleteConfirmationBottomSheet(
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
-
-                // Tombol Batalkan
                 OutlinedButton(
                     onClick = onDismiss,
                     modifier = Modifier

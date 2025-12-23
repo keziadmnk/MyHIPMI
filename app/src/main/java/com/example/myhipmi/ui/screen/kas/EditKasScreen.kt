@@ -32,8 +32,8 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.myhipmi.data.local.UserSessionManager
 import com.example.myhipmi.ui.components.MyHipmiTopBar
-import com.example.myhipmi.ui.theme.KasAccentGreen
-import com.example.myhipmi.ui.theme.KasDarkGreen
+import com.example.myhipmi.ui.theme.GreenPrimary
+import com.example.myhipmi.ui.theme.GreenPrimary
 import com.example.myhipmi.ui.theme.MyHIPMITheme
 import com.example.myhipmi.ui.viewmodel.KasState
 import com.example.myhipmi.ui.viewmodel.KasViewModel
@@ -151,7 +151,7 @@ fun EditKasScreen(
     ) { paddingValues ->
         if (kasState is KasState.Loading && selectedKas == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = KasDarkGreen)
+                CircularProgressIndicator(color = GreenPrimary)
             }
         } else {
             Column(
@@ -160,7 +160,7 @@ fun EditKasScreen(
                     .padding(paddingValues)
                     .padding(16.dp)
             ) {
-                Text("Nominal Pembayaran", fontWeight = FontWeight.Medium, color = KasDarkGreen, modifier = Modifier.padding(bottom = 8.dp))
+                Text("Nominal Pembayaran", fontWeight = FontWeight.Medium, color = GreenPrimary, modifier = Modifier.padding(bottom = 8.dp))
                 OutlinedTextField(
                     value = nominalString,
                     onValueChange = { newValue ->
@@ -172,13 +172,13 @@ fun EditKasScreen(
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.White,
                         unfocusedContainerColor = Color.White,
-                        focusedIndicatorColor = KasAccentGreen
+                        focusedIndicatorColor = GreenPrimary
                     )
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Deskripsi / Bulan", fontWeight = FontWeight.Medium, color = KasDarkGreen, modifier = Modifier.padding(bottom = 8.dp))
+                Text("Deskripsi / Bulan", fontWeight = FontWeight.Medium, color = GreenPrimary, modifier = Modifier.padding(bottom = 8.dp))
                 OutlinedTextField(
                     value = deskripsi,
                     onValueChange = { deskripsi = it },
@@ -187,13 +187,13 @@ fun EditKasScreen(
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.White,
                         unfocusedContainerColor = Color.White,
-                        focusedIndicatorColor = KasAccentGreen
+                        focusedIndicatorColor = GreenPrimary
                     )
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Bukti Pembayaran", fontWeight = FontWeight.Medium, color = KasDarkGreen, modifier = Modifier.padding(bottom = 8.dp))
+                Text("Bukti Pembayaran", fontWeight = FontWeight.Medium, color = GreenPrimary, modifier = Modifier.padding(bottom = 8.dp))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -220,7 +220,7 @@ fun EditKasScreen(
                         )
                     } else {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.PhotoCamera, null, tint = KasDarkGreen, modifier = Modifier.size(40.dp))
+                            Icon(Icons.Default.PhotoCamera, null, tint = GreenPrimary, modifier = Modifier.size(40.dp))
                             Text("Belum ada foto", color = Color.Gray)
                         }
                     }
@@ -235,14 +235,14 @@ fun EditKasScreen(
                             tempPhotoUri = uri
                             cameraLauncher.launch(uri)
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = KasAccentGreen, contentColor = KasDarkGreen),
+                        colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary, contentColor = GreenPrimary),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.weight(1f).padding(end = 4.dp)
                     ) { Text("Ubah (Kamera)") }
                     
                     Button(
                         onClick = { galleryLauncher.launch("image/*") },
-                        colors = ButtonDefaults.buttonColors(containerColor = KasAccentGreen, contentColor = KasDarkGreen),
+                        colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary, contentColor = GreenPrimary),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.weight(1f).padding(start = 4.dp)
                     ) { Text("Ubah (Galeri)") }
@@ -270,7 +270,7 @@ fun EditKasScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = kasState !is KasState.Loading,
-                    colors = ButtonDefaults.buttonColors(containerColor = KasDarkGreen),
+                    colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     if (kasState is KasState.Loading) {

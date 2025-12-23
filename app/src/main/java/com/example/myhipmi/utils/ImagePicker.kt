@@ -6,7 +6,6 @@ import androidx.core.content.FileProvider
 import java.io.File
 
 object ImagePicker {
-    // Utility class if needed for custom pickers logic
 }
 
 fun createImageUri(context: Context): Uri {
