@@ -11,7 +11,6 @@ import java.text.SimpleDateFormat
 import java.util.*
 import org.json.JSONObject
 import android.content.Context
-import com.example.myhipmi.utils.RapatNotificationHelper
 
 class RapatViewModel : ViewModel() {
 
@@ -184,12 +183,8 @@ class RapatViewModel : ViewModel() {
                 if (response.isSuccessful && response.body()?.success == true) {
                     _successMessage.value = response.body()?.message ?: "Agenda berhasil dibuat"
 
-                    RapatNotificationHelper.showRapatNotification(
-                        context = context,
-                        rapatTitle = title,
-                        rapatDate = dateDisplay,
-                        rapatLocation = location
-                    )
+                    // Notifikasi akan dikirim via FCM dari backend ke semua device
+                    // yang subscribe ke topic "agenda_rapat"
                     
                     loadAllAgenda()
                 } else {

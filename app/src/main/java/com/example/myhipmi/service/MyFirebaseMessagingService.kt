@@ -23,18 +23,38 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         Log.d(TAG, "📩 Data payload: ${remoteMessage.data}")
         Log.d(TAG, "📩 Notification payload: ${remoteMessage.notification}")
 
+        // Handle DATA payload first
         if (remoteMessage.data.isNotEmpty()) {
             val type = remoteMessage.data["type"]
             val title = remoteMessage.data["title"] ?: "Notifikasi Baru"
             val body = remoteMessage.data["body"] ?: "Ada pesan baru untuk Anda"
 
-            if (type == "kas_reminder") {
-                Log.d(TAG, "💰 Handling Kas Reminder Notification")
-                KasNotificationHelper.showKasReminderNotification(this, title, body)
-                return
+            Log.d(TAG, "📦 Data payload type: $type")
+
+            when (type) {
+                "kas_reminder" -> {
+                    Log.d(TAG, "💰 Handling Kas Reminder Notification")
+                    KasNotificationHelper.showKasReminderNotification(this, title, body)
+                    return
+                }
+                "agenda_rapat" -> {
+                    Log.d(TAG, "📅 Handling Agenda Rapat Notification")
+                    showNotification(title, body)
+                    return
+                }
+                "event" -> {
+                    Log.d(TAG, "📢 Handling Event Notification")
+                    showNotification(title, body)
+                    return
+                }
+                else -> {
+                    // Type tidak ada atau tidak dikenali, fallback ke notification payload
+                    Log.d(TAG, "⚠️ Unknown or missing type: $type, will try notification payload")
+                }
             }
         }
 
+        // Fallback: Handle NOTIFICATION payload jika data tidak dihandle
         remoteMessage.notification?.let {
             val title = it.title ?: "Notifikasi Baru!"
             val body = it.body ?: "Ada notifikasi baru untuk Anda"
@@ -55,6 +75,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notificationId = System.currentTimeMillis().toInt()
 
+        // Create notification channel dengan IMPORTANCE_HIGH untuk heads-up
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
@@ -64,34 +85,58 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 description = "Notifikasi penting untuk event dan agenda rapat"
                 enableVibration(true)
                 enableLights(true)
+                setShowBadge(true)
+                // Force sound dan vibration
+                vibrationPattern = longArrayOf(0, 250, 250, 250)
+                lightColor = android.graphics.Color.BLUE
             }
             notificationManager.createNotificationChannel(channel)
-            Log.d(TAG, "✅ Notification channel created: $CHANNEL_ID")
+            Log.d(TAG, "✅ Notification channel created: $CHANNEL_ID with IMPORTANCE_HIGH")
         }
 
+        // Intent untuk membuka aplikasi
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("from_notification", true)
         }
+        
         val pendingIntent = PendingIntent.getActivity(
             this,
-            0,
+            notificationId,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Full screen intent untuk force heads-up di beberapa device
+        val fullScreenIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val fullScreenPendingIntent = PendingIntent.getActivity(
+            this,
+            notificationId,
+            fullScreenIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Build notification dengan semua setting untuk force heads-up
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(message)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setDefaults(NotificationCompat.DEFAULT_ALL)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)  // HIGH priority untuk heads-up
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)  // Category MESSAGE untuk heads-up
+            .setDefaults(NotificationCompat.DEFAULT_ALL)  // Sound, vibration, lights
+            .setVibrate(longArrayOf(0, 250, 250, 250))  // Force vibration
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)  // Show di lockscreen
+            .setFullScreenIntent(fullScreenPendingIntent, false)  // Force heads-up
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))  // Expandable
             .build()
 
         notificationManager.notify(notificationId, notification)
         Log.d(TAG, "🚀 Notification posted with ID: $notificationId")
+        Log.d(TAG, "🎯 Channel: $CHANNEL_ID, Priority: HIGH, Category: MESSAGE")
     }
 
     companion object {
